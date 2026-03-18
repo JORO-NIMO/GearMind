@@ -1,0 +1,82 @@
+{
+  "carburetor": {
+    "diagnosis": "Fuel delivery issue or blockage",
+    "solutions": [
+      "Clean carburetor jets",
+      "Replace gasket",
+      "Inspect fuel line"
+    ],
+    "tools": ["spanner", "screwdriver", "carburetor cleaner"],
+    "risk": "Medium"
+  },
+  "radiator": {
+    "diagnosis": "Coolant leak or overheating",
+    "solutions": [
+      "Check for leaks in hoses",
+      "Replace radiator cap",
+      "Flush cooling system"
+    ],
+    "tools": ["pliers", "coolant pressure tester"],
+    "risk": "High"
+  },
+  "brake_pad": {
+    "diagnosis": "Excessive wear or stopping issues",
+    "solutions": [
+      "Replace brake pads",
+      "Inspect rotors",
+      "Check brake fluid level"
+    ],
+    "tools": ["jack", "lug wrench", "brake caliper tool"],
+    "risk": "High"
+  },
+  "alternator_belt": {
+    "diagnosis": "Charging system failure or belt slip",
+    "solutions": [
+      "Replace worn belt",
+      "Adjust belt tension",
+      "Inspect pulleys"
+    ],
+    "tools": ["socket wrench", "belt tension gauge"],
+    "risk": "Low"
+  },
+  "battery": {
+    "diagnosis": "Weak charge or terminal corrosion",
+    "solutions": [
+      "Clean battery terminals",
+      "Recharge battery",
+      "Replace old battery"
+    ],
+    "tools": ["wire brush", "multimeter", "battery charger"],
+    "risk": "Medium"
+  },
+  "spark_plug": {
+    "diagnosis": "Engine misfire or poor fuel economy",
+    "solutions": [
+      "Clean spark plug electrodes",
+      "Gap spark plugs correctly",
+      "Replace worn spark plugs"
+    ],
+    "tools": ["spark plug socket", "gap gauge", "torque wrench"],
+    "risk": "Medium"
+  },
+  "oil_filter": {
+    "diagnosis": "Clogged filter or oil leak",
+    "solutions": [
+      "Replace oil filter",
+      "Perform oil change",
+      "Check filter gasket"
+    ],
+    "tools": ["oil filter wrench", "drain pan"],
+    "risk": "Low"
+  },
+  "fuel_pump": {
+    "diagnosis": "Engine stalling or failing to start",
+    "solutions": [
+      "Check fuel pump relay",
+      "Verify fuel pressure",
+      "Replace fuel pump"
+    ],
+    "tools": ["fuel pressure gauge", "multimeter"],
+    "risk": "High"
+  }
+}

@@ -30,7 +30,7 @@ const HomeScreen = () => {
         className="mt-8 mb-6"
       >
         <h1 className="text-4xl font-bold font-display tracking-tight text-foreground leading-tight">
-          Draft<span className="text-primary">Wise</span>
+          Gear<span className="text-primary">Mind</span>
         </h1>
         <p className="text-lg font-display text-foreground/80 mt-1">
           Scan. Diagnose. Decide.

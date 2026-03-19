@@ -21,7 +21,10 @@ router.post('/', async (req, res) => {
     return res.json(result);
   } catch (error) {
     console.error("Analysis error:", error);
-    return res.status(500).json({ error: "Internal server error during analysis" });
+    return res.status(500).json({ 
+      error: "Internal server error during analysis", 
+      message: error.message 
+    });
   }
 });
 

@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Odd Shoes — Brand Identity System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,700&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --black: #1a1a1a;
+      --white: #ffffff;
+      --cream: #f8f6f2;
+      --coral: #e05a3a;
+      --coral-dark: #c94e30;
+      --coral-light: #f4a08e;
+      --gray-100: #f5f5f5;
+      --gray-200: #ebebeb;
+      --gray-400: #aaa;
+      --gray-500: #888;
+      --gray-600: #666;
+      --serif: 'Playfair Display', Georgia, serif;
+      --sans: 'DM Sans', -apple-system, sans-serif;
+      --mono: 'JetBrains Mono', 'Fira Code', monospace;
+      --transition: .35s cubic-bezier(.4,0,.2,1);
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    ::selection { background: var(--coral); color: var(--white); }
+    body {
+      font-family: var(--sans);
+      color: var(--black);
+      background: var(--white);
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.7;
+    }
+    a { text-decoration: none; color: inherit; }
+
+    /* ─── COVER ─── */
+    .cover {
+      min-height: 100vh;
+      background: var(--black);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 60px 40px;
+      position: relative;
+      overflow: hidden;
+    }
+    .cover::before {
+      content: '';
+      position: absolute;
+      width: 600px; height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(224,90,58,.08) 0%, transparent 70%);
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    .cover__label {
+      font-family: var(--mono);
+      font-size: .65rem;
+      letter-spacing: .25em;
+      text-transform: uppercase;
+      color: var(--coral);
+      margin-bottom: 3rem;
+      position: relative;
+    }
+    .cover__logo {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+      position: relative;
+    }
+    .cover__wordmark {
+      display: flex;
+      align-items: baseline;
+      gap: .35em;
+    }
+    .cover__odd {
+      font-family: var(--serif);
+      font-size: clamp(4rem, 8vw, 7rem);
+      font-weight: 600;
+      font-style: italic;
+      color: var(--coral);
+      letter-spacing: -.02em;
+    }
+    .cover__shoes {
+      font-family: var(--mono);
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      font-weight: 400;
+      color: rgba(255,255,255,.5);
+    }
+    .cover__cursor {
+      display: inline-block;
+      width: 3px;
+      height: clamp(2rem, 4vw, 3.5rem);
+      background: var(--coral);
+      margin-left: 3px;
+      vertical-align: middle;
+      animation: blink 1s step-end infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+    .cover__tagline {
+      font-family: var(--mono);
+      font-size: .7rem;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.25);
+      position: relative;
+    }
+    .cover__version {
+      position: absolute;
+      bottom: 30px;
+      font-family: var(--mono);
+      font-size: .6rem;
+      color: rgba(255,255,255,.15);
+      letter-spacing: .1em;
+    }
+
+    /* ─── SECTION SYSTEM ─── */
+    .section {
+      padding: 100px 0;
+    }
+    .section--cream { background: var(--cream); }
+    .section--dark { background: var(--black); color: var(--white); }
+    .section--coral { background: var(--coral); color: var(--white); }
+    .container {
+      width: 90%;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .section-header {
+      margin-bottom: 4rem;
+    }
+    .section-header__label {
+      font-family: var(--mono);
+      font-size: .65rem;
+      font-weight: 600;
+      letter-spacing: .25em;
+      text-transform: uppercase;
+      color: var(--coral);
+      margin-bottom: .8rem;
+    }
+    .section--dark .section-header__label { color: var(--coral); }
+    .section-header__title {
+      font-family: var(--serif);
+      font-size: clamp(1.8rem, 3vw, 2.5rem);
+      font-weight: 500;
+      margin-bottom: .5rem;
+    }
+    .section-header__desc {
+      color: var(--gray-500);
+      font-size: .9rem;
+      max-width: 500px;
+    }
+    .section--dark .section-header__desc { color: rgba(255,255,255,.4); }
+
+    /* ─── LOGO CARDS ─── */
+    .logo-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+    .logo-grid--3 { grid-template-columns: repeat(3, 1fr); }
+    .logo-grid--4 { grid-template-columns: repeat(4, 1fr); }
+    .logo-card {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 50px 30px;
+      min-height: 200px;
+      position: relative;
+    }
+    .logo-card--light { background: var(--white); border: 1px solid var(--gray-200); }
+    .logo-card--dark { background: var(--black); }
+    .logo-card--cream { background: var(--cream); border: 1px solid #e8e4dd; }
+    .logo-card--coral { background: var(--coral); }
+    .logo-card--charcoal { background: #252525; }
+    .logo-card__label {
+      position: absolute;
+      top: 12px; left: 14px;
+      font-family: var(--mono);
+      font-size: .55rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      opacity: .3;
+    }
+
+    /* ─── WORDMARK COMPONENT ─── */
+    .wm {
+      display: flex;
+      align-items: baseline;
+      gap: .3em;
+      user-select: none;
+    }
+    .wm__odd {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-style: italic;
+      letter-spacing: -.02em;
+    }
+    .wm__shoes {
+      font-family: var(--mono);
+      font-weight: 400;
+    }
+    .wm__cursor {
+      display: inline-block;
+      width: 2px;
+      margin-left: 2px;
+      vertical-align: middle;
+      animation: blink 1s step-end infinite;
+    }
+    .wm__dev {
+      font-family: var(--mono);
+      font-weight: 400;
+      opacity: .5;
+    }
+    .wm__sub {
+      font-family: var(--mono);
+      font-size: .55rem;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      opacity: .35;
+      display: block;
+      margin-top: .3rem;
+    }
+
+    /* Sizes */
+    .wm--lg .wm__odd { font-size: 3.2rem; }
+    .wm--lg .wm__shoes { font-size: 1.7rem; }
+    .wm--lg .wm__cursor { height: 1.7rem; }
+    .wm--md .wm__odd { font-size: 2.2rem; }
+    .wm--md .wm__shoes { font-size: 1.2rem; }
+    .wm--md .wm__cursor { height: 1.2rem; }
+    .wm--sm .wm__odd { font-size: 1.4rem; }
+    .wm--sm .wm__shoes { font-size: .8rem; }
+    .wm--sm .wm__cursor { height: .8rem; }
+
+    /* ─── STACKED VARIANT ─── */
+    .wm-stacked {
+      text-align: center;
+      user-select: none;
+      line-height: 1;
+    }
+    .wm-stacked__odd {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-style: italic;
+      display: block;
+      letter-spacing: -.02em;
+    }
+    .wm-stacked__shoes {
+      font-family: var(--mono);
+      font-weight: 400;
+      display: block;
+      margin-top: .2rem;
+    }
+
+    /* ─── ICON COMPONENT ─── */
+    .icon {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .icon__o {
+      font-family: var(--serif);
+      font-weight: 700;
+      font-style: italic;
+    }
+    .icon__s {
+      font-family: var(--mono);
+      font-weight: 400;
+    }
+    .icon__cursor {
+      display: inline-block;
+      width: 2px;
+      animation: blink 1s step-end infinite;
+    }
+
+    /* ─── MASCOT ─── */
+    .mascot-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
+    .mascot-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px 30px;
+      min-height: 300px;
+    }
+    .mascot-card__label {
+      font-family: var(--serif);
+      font-size: 1rem;
+      font-weight: 500;
+      margin-top: 1.2rem;
+    }
+    .mascot-card__context {
+      font-family: var(--mono);
+      font-size: .6rem;
+      color: var(--gray-400);
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      margin-top: .3rem;
+    }
+
+    /* Small mascot states */
+    .states-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 1rem;
+    }
+    .state-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 25px 10px;
+      text-align: center;
+    }
+    .state-card__label {
+      font-family: var(--mono);
+      font-size: .55rem;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-top: .8rem;
+      opacity: .5;
+    }
+
+    /* ─── COLOR SYSTEM ─── */
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 1.5rem;
+    }
+    .color-swatch {
+      aspect-ratio: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 1.2rem;
+      position: relative;
+    }
+    .color-swatch__name {
+      font-family: var(--serif);
+      font-size: 1rem;
+      font-weight: 500;
+      margin-bottom: .2rem;
+    }
+    .color-swatch__hex {
+      font-family: var(--mono);
+      font-size: .7rem;
+      opacity: .7;
+    }
+
+    /* ─── TYPOGRAPHY ─── */
+    .type-specimen {
+      margin-bottom: 3rem;
+      padding-bottom: 3rem;
+      border-bottom: 1px solid var(--gray-200);
+    }
+    .type-specimen:last-child { border-bottom: none; }
+    .type-specimen__label {
+      font-family: var(--mono);
+      font-size: .6rem;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: var(--coral);
+      margin-bottom: 1rem;
+    }
+    .type-specimen__sample {
+      margin-bottom: 1rem;
+    }
+    .type-specimen__meta {
+      font-family: var(--mono);
+      font-size: .7rem;
+      color: var(--gray-400);
+    }
+
+    /* ─── USAGE GUIDELINES ─── */
+    .usage-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+    }
+    .usage-card {
+      padding: 2.5rem;
+      border: 1px solid var(--gray-200);
+    }
+    .usage-card__title {
+      font-family: var(--serif);
+      font-size: 1.1rem;
+      margin-bottom: .8rem;
+    }
+    .usage-card p {
+      font-size: .88rem;
+      color: var(--gray-600);
+      line-height: 1.7;
+    }
+    .usage-card--do { border-left: 3px solid #28c840; }
+    .usage-card--dont { border-left: 3px solid #ff5f57; }
+    .usage-card__badge {
+      font-family: var(--mono);
+      font-size: .6rem;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      display: inline-block;
+    }
+    .usage-card__badge--do { color: #28c840; }
+    .usage-card__badge--dont { color: #ff5f57; }
+
+    /* ─── LOCKUP EXAMPLES ─── */
+    .lockup-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+    .lockup-card {
+      padding: 40px 30px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 220px;
+      gap: 1.5rem;
+    }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 768px) {
+      .logo-grid, .logo-grid--3, .usage-grid, .lockup-grid { grid-template-columns: 1fr; }
+      .logo-grid--4 { grid-template-columns: repeat(2, 1fr); }
+      .mascot-grid { grid-template-columns: 1fr; }
+      .states-grid { grid-template-columns: repeat(3, 1fr); }
+      .section { padding: 60px 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- COVER -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section class="cover">
+  <div class="cover__label">Brand Identity System</div>
+  <div class="cover__logo">
+    <svg viewBox="0 0 80 100" style="width:70px;height:88px;">
+      <ellipse cx="40" cy="52" rx="22" ry="28" fill="#fff" opacity=".95"/>
+      <circle cx="40" cy="25" r="16" fill="#fff"/>
+      <path d="M30 27 L22 32 L22 38 L32 36 L34 30 Z" fill="#e05a3a"/>
+      <path d="M22 32 L22 38 L32 36 L28 32 Z" fill="#c94e30"/>
+      <circle cx="36" cy="22" r="4.5" fill="#1a1a1a"/>
+      <circle cx="37.5" cy="21" r="1.3" fill="#fff"/>
+      <line x1="31" y1="15" x2="41" y2="17" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"/>
+      <ellipse cx="27" cy="48" rx="6" ry="16" fill="#eee" transform="rotate(-10 27 48)"/>
+      <ellipse cx="53" cy="48" rx="6" ry="16" fill="#eee" transform="rotate(10 53 48)"/>
+      <line x1="35" y1="78" x2="32" y2="92" stroke="#e05a3a" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="45" y1="78" x2="48" y2="92" stroke="#e05a3a" stroke-width="2.5" stroke-linecap="round"/>
+      <ellipse cx="27" cy="95" rx="8" ry="4" fill="#e05a3a"/>
+      <line x1="22" y1="94" x2="22" y2="96" stroke="#fff" stroke-width=".8"/>
+      <line x1="25" y1="94" x2="25" y2="96" stroke="#fff" stroke-width=".8"/>
+      <ellipse cx="53" cy="95" rx="8" ry="4" fill="#1a1a1a"/>
+    </svg>
+    <div class="cover__wordmark">
+      <span class="cover__odd">Odd</span>
+      <span class="cover__shoes">shoes</span>
+      <span class="cover__cursor"></span>
+    </div>
+  </div>
+  <div class="cover__tagline">Build · Launch · Multiply</div>
+  <div class="cover__version">oddshoes.dev — Brand Guidelines v1.0 — February 2026</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 1. PRIMARY LOGO -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-header__label">01 · Primary Logo</div>
+      <div class="section-header__title">The Wordmark</div>
+      <div class="section-header__desc">Italic Playfair Display "Odd" + JetBrains Mono "shoes" + blinking coral cursor. Creativity meets code.</div>
+    </div>
+
+    <div class="logo-grid" style="margin-bottom:1.5rem;">
+      <div class="logo-card logo-card--light">
+        <span class="logo-card__label" style="color:#aaa;">Light background</span>
+        <div class="wm wm--lg">
+          <span class="wm__odd" style="color:#1a1a1a;">Odd</span>
+          <span class="wm__shoes" style="color:#888;">shoes</span>
+          <span class="wm__cursor" style="background:#e05a3a;height:1.7rem;"></span>
+        </div>
+      </div>
+      <div class="logo-card logo-card--dark">
+        <span class="logo-card__label" style="color:#555;">Dark background</span>
+        <div class="wm wm--lg">
+          <span class="wm__odd" style="color:#e05a3a;">Odd</span>
+          <span class="wm__shoes" style="color:rgba(255,255,255,.5);">shoes</span>
+          <span class="wm__cursor" style="background:#e05a3a;height:1.7rem;"></span>
+        </div>
+      </div>
+    </div>
+    <div class="logo-grid">
+      <div class="logo-card logo-card--cream">
+        <span class="logo-card__label" style="color:#bbb;">Cream background</span>
+        <div class="wm wm--lg">
+          <span class="wm__odd" style="color:#e05a3a;">Odd</span>
+          <span class="wm__shoes" style="color:#888;">shoes</span>
+          <span class="wm__cursor" style="background:#e05a3a;height:1.7rem;"></span>
+        </div>
+      </div>
+      <div class="logo-card logo-card--coral">
+        <span class="logo-card__label" style="color:rgba(255,255,255,.3);">Coral background</span>
+        <div class="wm wm--lg">
+          <span class="wm__odd" style="color:#fff;">Odd</span>
+          <span class="wm__shoes" style="color:rgba(255,255,255,.5);">shoes</span>
+          <span class="wm__cursor" style="background:#fff;height:1.7rem;"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 2. LOGO WITH .DEV -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section class="section section--cream">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-header__label">02 · Domain Variant</div>
+      <div class="section-header__title">With .dev</div>
+      <div class="section-header__desc">For contexts where the URL matters — social bios, business cards, email signatures.</div>
+    </div>
+
+    <div class="logo-grid">
+      <div class="logo-card logo-card--light">
+        <div class="wm wm--md">
+          <span class="wm__odd" style="color:#1a1a1a;">Odd</span>
+          <span class="wm__shoes" style="color:#888;">shoes</span>
+          <span class="wm__dev" style="color:#e05a3a;font-size:.9rem;">.dev</span>
+        </div>
+      </div>
+      <div class="logo-card logo-card--dark">
+        <div class="wm wm--md">
+          <span class="wm__odd" style="color:#e05a3a;">Odd</span>
+          <span class="wm__shoes" style="color:rgba(255,255,255,.5);">shoes</span>
+          <span class="wm__dev" style="color:rgba(255,255,255,.25);font-size:.9rem;">.dev</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 3. STACKED + WITH TAGLINE -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-header__label">03 · Stacked & Tagline Variants</div>
+      <div class="section-header__title">Vertical layouts</div>
+      <div class="section-header__desc">For square formats, social avatars, and compact spaces.</div>
+    </div>
+
+    <div class="logo-grid--3" style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;">
+      <div class="logo-card logo-card--light" style="flex-direction:column;gap:.5rem;">
+        <span class="logo-card__label" style="color:#aaa;">Stacked</span>
+        <div class="wm-stacked">
+          <span class="wm-stacked__odd" style="font-size:3rem;color:#1a1a1a;">Odd</span>
+          <span class="wm-stacked__shoes" style="font-size:1rem;color:#888;letter-spacing:.15em;">shoes</span>
+        </div>
+      </div>
+      <div class="logo-card logo-card--dark" style="flex-direction:column;gap:1rem;">
+        <span class="logo-card__label" style="color:#555;">With tagline</span>
+        <div class="wm wm--md">
+          <span class="wm__odd" style="color:#e05a3a;">Odd</span>
+          <span class="wm__shoes" style="color:rgba(255,255,255,.5);">shoes</span>
+          <span class="wm__cursor" style="background:#e05a3a;height:1.2rem;"></span>
+        </div>
+        <div style="font-family:var(--mono);font-size:.55rem;color:rgba(255,255,255,.2);letter-spacing:.2em;text-transform:uppercase;">Build · Launch · Multiply</div>
+      </div>
+      <div class="logo-card logo-card--cream" style="flex-direction:column;gap:1rem;">
+        <span class="logo-card__label" style="color:#bbb;">With descriptor</span>
+        <div class="wm wm--md">
+          <span class="wm__odd" style="color:#e05a3a;">Odd</span>
+          <span class="wm__shoes" style="color:#888;">shoes</span>
+          <span class="wm__cursor" style="background:#e05a3a;height:1.2rem;"></span>
+        </div>
+        <div style="font-family:var(--mono);font-size:.55rem;color:#bbb;letter-spacing:.15em;text-transform:uppercase;">Startup Studio · Kampala</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 4. ICON MARK -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section class="section section--dark">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-header__label">04 · Icon Mark</div>
+      <div class="section-header__title">Standalone icon</div>
+      <div class="section-header__desc">For favicons, app icons, social avatars, watermarks. The italic serif O + mono s + cursor distilled to its essence.</div>
+    </div>
+
+    <div class="logo-grid--4" style="display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem;">
+      <div class="logo-card logo-card--light" style="min-height:160px;">
+        <div class="icon" style="color:#1a1a1a;">
+          <span class="icon__o" style="font-size:2.6rem;color:#e05a3a;">O</span>
+          <span class="icon__s" style="font-size:1.8rem;color:#888;">s</span>
+          <span class="icon__cursor" style="height:1.6rem;width:2px;background:#e05a3a;"></span>
+        </div>
+      </div>
+      <div class="logo-card logo-card--dark" style="min-height:160px;border:1px solid #333;">
+        <div class="icon" style="color:#fff;">
+          <span class="icon__o" style="font-size:2.6rem;color:#e05a3a;">O</span>
+          <span class="icon__s" style="font-size:1.8rem;color:rgba(255,255,255,.4);">s</span>
+          <span class="icon__cursor" style="height:1.6rem;width:2px;background:#e05a3a;"></span>
+        </div>
+      </div>
+      <div class="logo-card logo-card--coral" style="min-height:160px;">
+        <div class="icon" style="color:#fff;">
+          <span class="icon__o" style="font-size:2.6rem;">O</span>
+          <span class="icon__s" style="font-size:1.8rem;opacity:.6;">s</span>
+          <span class="icon__cursor" style="height:1.6rem;width:2px;background:#fff;"></span>
+        </div>
+      </div>
+      <div class="logo-card" style="min-height:160px;background:#f0f0f0;">
+        <!-- Favicon / circle crop -->
+        <div style="width:80px;height:80px;border-radius:50%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;">
+          <div class="icon" style="color:#fff;">
+            <span class="icon__o" style="font-size:1.6rem;color:#e05a3a;">O</span>
+            <span class="icon__s" style="font-size:1.1rem;opacity:.5;">s</span>
+            <span class="icon__cursor" style="height:1rem;width:1.5px;background:#e05a3a;"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 5. SOLÉ THE MASCOT -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-header__label">05 · Mascot — "Solé"</div>
+      <div class="section-header__title">The Shoebill</div>
+      <div class="section-header__desc">Uganda's most iconic bird wearing mismatched shoes. Carries a laptop, wears a halo. Multiple emotional states for every context.</div>
+    </div>
+
+    <div class="mascot-grid" style="margin-bottom:3rem;">
+      <!-- Default -->
+      <div class="mascot-card logo-card--light">
+        <svg viewBox="0 0 200 250" style="width:180px;height:225px;">
+          <!-- Body -->
+          <ellipse cx="100" cy="135" rx="38" ry="48" fill="#1a1a1a"/>
+          <!-- Belly -->
+          <ellipse cx="100" cy="145" rx="25" ry="30" fill="#2a2a2a"/>
+          <!-- Head -->
+          <circle cx="100" cy="68" r="28" fill="#1a1a1a"/>
+          <!-- Beak -->
+          <path d="M78 70 L62 80 L62 92 L82 88 L87 78 Z" fill="#e05a3a"/>
+          <path d="M62 80 L62 92 L82 88 L76 82 Z" fill="#c94e30"/>
+          <line x1="68" y1="85" x2="78" y2="83" stroke="#1a1a1a" stroke-width=".8" opacity=".3"/>
+          <!-- Eye -->
+          <circle cx="90" cy="60" r="7" fill="#fff"/>
+          <circle cx="91.5" cy="59" r="3.5" fill="#1a1a1a"/>
+          <circle cx="92.5" cy="58" r="1.2" fill="#fff"/>
+          <!-- Eyebrow -->
+          <line x1="82" y1="50" x2="98" y2="52" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
+          <!-- Wings -->
+          <ellipse cx="66" cy="130" rx="10" ry="26" fill="#2a2a2a" transform="rotate(-8 66 130)"/>
+          <ellipse cx="134" cy="130" rx="10" ry="26" fill="#2a2a2a" transform="rotate(8 134 130)"/>
+          <!-- Laptop under wing -->
+          <rect x="130" y="115" width="22" height="16" rx="2" fill="#555" transform="rotate(12 141 123)"/>
+          <rect x="132" y="117" width="18" height="11" rx="1" fill="#4a9eff" opacity=".5" transform="rotate(12 141 123)"/>
+          <!-- Legs -->
+          <line x1="88" y1="180" x2="82" y2="212" stroke="#e05a3a" stroke-width="3.5" stroke-linecap="round"/>
+          <line x1="112" y1="180" x2="118" y2="212" stroke="#e05a3a" stroke-width="3.5" stroke-linecap="round"/>
+          <!-- LEFT: Coral sneaker -->
+          <path d="M67 210 L88 210 L92 218 L64 218 L62 214 Z" fill="#e05a3a"/>
+          <path d="M64 218 L92 218 L92 222 L64 222 Z" fill="#c94e30"/>
+          <line x1="70" y1="213" x2="70" y2="216" stroke="#fff" stroke-width="1"/>
+          <line x1="75" y1="213" x2="75" y2="216" stroke="#fff" stroke-width="1"/>
+          <line x1="80" y1="213" x2="80" y2="216" stroke="#fff" stroke-width="1"/>
+          <!-- RIGHT: Black dress shoe -->
+          <path d="M106 210 L132 210 L136 218 L103 218 Z" fill="#1a1a1a"/>
+          <path d="M103 218 L136 218 L136 222 L103 222 Z" fill="#111"/>
+          <ellipse cx="114" cy="214" rx="3" ry="1.5" fill="#333"/>
+        </svg>
+        <div class="mascot-card__label">Default</div>
+        <div class="mascot-card__context">Homepage · Nav · Loading</div>
+      </div>
+
+      <!-- Celebrating -->
+      <div class="mascot-card logo-card--dark">
+        <svg viewBox="0 0 200 250" style="width:180px;height:225px;">
+          <ellipse cx="100" cy="135" rx="38" ry="48" fill="#fff"/>
+          <ellipse cx="100" cy="145" rx="25" ry="30" fill="#f5f5f5"/>
+          <circle cx="100" cy="68" r="28" fill="#fff"/>
+          <path d="M78 70 L62 80 L62 92 L82 88 L87 78 Z" fill="#e05a3a"/>
+          <path d="M62 80 L62 92 L82 88 L76 82 Z" fill="#c94e30"/>
+          <!-- Happy eyes -->
+          <path d="M83 60 Q90 52 97 60" stroke="#1a1a1a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <!-- Blush -->
+          <circle cx="80" cy="68" r="5" fill="#e05a3a" opacity=".15"/>
+          <!-- Wings UP -->
+          <ellipse cx="58" cy="112" rx="10" ry="26" fill="#eee" transform="rotate(-30 58 112)"/>
+          <ellipse cx="142" cy="112" rx="10" ry="26" fill="#eee" transform="rotate(30 142 112)"/>
+          <!-- Halo -->
+          <ellipse cx="100" cy="38" rx="18" ry="5" fill="none" stroke="#e05a3a" stroke-width="1.5" opacity=".4"/>
+          <!-- Sparkles -->
+          <text x="45" y="95" fill="#e05a3a" font-size="14" opacity=".6">✦</text>
+          <text x="148" y="95" fill="#e05a3a" font-size="14" opacity=".6">✦</text>
+          <text x="100" y="30" fill="#e05a3a" font-size="10" opacity=".4">✦</text>
+          <!-- Legs + shoes -->
+          <line x1="88" y1="180" x2="82" y2="212" stroke="#e05a3a" stroke-width="3.5" stroke-linecap="round"/>
+          <line x1="112" y1="180" x2="118" y2="212" stroke="#e05a3a" stroke-width="3.5" stroke-linecap="round"/>
+          <path d="M67 210 L88 210 L92 218 L64 218 L62 214 Z" fill="#e05a3a"/>
+          <path d="M64 218 L92 218 L92 222 L64 222 Z" fill="#c94e30"/>
+          <path d="M106 210 L132 210 L136 218 L103 218 Z" fill="#fff" stroke="#e05a3a" stroke-width="1.5"/>
+          <path d="M103 218 L136 218 L136 222 L103 222 Z" fill="#f5f5f5" stroke="#e05a3a" stroke-width="1"/>
+        </svg>
+        <div class="mascot-card__label" style="color:#fff;">Ship it!</div>
+        <div class="mascot-card__context">Success · Launch · Celebration</div>
+      </div>
+
+      <!-- Praying -->
+      <div class="mascot-card logo-card--coral">
+        <svg viewBox="0 0 200 250" style="width:180px;height:225px;">
+          <ellipse cx="100" cy="135" rx="38" ry="48" fill="#fff"/>
+          <ellipse cx="100" cy="145" rx="25" ry="30" fill="#f8f8f8"/>
+          <circle cx="100" cy="68" r="28" fill="#fff"/>
+          <path d="M78 70 L62 80 L62 92 L82 88 L87 78 Z" fill="#1a1a1a"/>
+          <path d="M62 80 L62 92 L82 88 L76 82 Z" fill="#111"/>
+          <!-- Peaceful closed eyes -->
+          <path d="M83 62 Q90 56 97 62" stroke="#1a1a1a" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <!-- Gentle smile -->
+          <path d="M86 70 Q90 73 94 70" stroke="#1a1a1a" stroke-width="1" fill="none" stroke-linecap="round" opacity=".3"/>
+          <!-- Hands together -->
+          <ellipse cx="100" cy="130" rx="12" ry="20" fill="#eee"/>
+          <!-- Cross -->
+          <line x1="100" y1="118" x2="100" y2="132" stroke="#1a1a1a" stroke-width="1.5"/>
+          <line x1="94" y1="124" x2="106" y2="124" stroke="#1a1a1a" stroke-width="1.5"/>
+          <!-- Legs barefoot -->
+          <line x1="88" y1="180" x2="88" y2="215" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/>
+          <line x1="112" y1="180" x2="112" y2="215" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/>
+          <ellipse cx="88" cy="220" rx="8" ry="4" fill="#fff"/>
+          <ellipse cx="112" cy="220" rx="8" ry="4" fill="#fff"/>
+          <!-- Light rays -->
+          <line x1="100" y1="30" x2="100" y2="15" stroke="#fff" stroke-width="1" opacity=".3"/>
+          <line x1="85" y1="35" x2="78" y2="22" stroke="#fff" stroke-width="1" opacity=".2"/>
+          <line x1="115" y1="35" x2="122" y2="22" stroke="#fff" stroke-width="1" opacity=".2"/>
+        </svg>
+        <div class="mascot-card__label" style="color:#fff;">Give Him 50</div>
+        <div class="mascot-card__context">Mission · Prayer · Faith</div>
+      </div>
+    </div>
+
+    <!-- Mini states -->
+    <div class="states-grid">
+      <div class="state-card logo-card--light">
+        <svg viewBox="0 0 60 75" style="width:55px;height:68px;">
+          <ellipse cx="30" cy="38" rx="14" ry="17" fill="#1a1a1a"/>
+          <circle cx="30" cy="20" r="10" fill="#1a1a1a"/>
+          <path d="M25 21 L20 25 L20 28 L26 27 L27 24 Z" fill="#e05a3a"/>
+          <circle cx="29" cy="18" r="2.5" fill="#fff"/>
+          <circle cx="29.5" cy="17.5" r="1.2" fill="#1a1a1a"/>
+          <line x1="26" y1="55" x2="24" y2="65" stroke="#e05a3a" stroke-width="2" stroke-linecap="round"/>
+          <line x1="34" y1="55" x2="36" y2="65" stroke="#e05a3a" stroke-width="2" stroke-linecap="round"/>
+          <ellipse cx="21" cy="68" rx="5" ry="2.5" fill="#e05a3a"/>
+          <ellipse cx="39" cy="68" rx="5" ry="2.5" fill="#1a1a1a"/>
+        </svg>
+        <div class="state-card__label">Default</div>
+      </div>
+      <div class="state-card logo-card--light">
+        <svg viewBox="0 0 60 75" style="width:55px;height:68px;">
+          <ellipse cx="30" cy="38" rx="14" ry="17" fill="#1a1a1a"/>
+          <circle cx="30" cy="20" r="10" fill="#1a1a1a"/>
+          <path d="M25 21 L20 25 L20 28 L26 27 L27 24 Z" fill="#e05a3a"/>
+          <path d="M26 18 Q29 15 32 18" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+          <line x1="26" y1="55" x2="24" y2="65" stroke="#e05a3a" stroke-width="2" stroke-linecap="round"/>
+          <line x1="34" y1="55" x2="36" y2="65" stroke="#e05a3a" stroke-width="2" stroke-linecap="round"/>
+          <ellipse cx="21" cy="68" rx="5" ry="2.5" fill="#e05a3a"/>
+          <ellipse cx="39" cy="68" rx="5" ry="2.5" fill="#1a1a1a"/>
+          <text x="40" y="12" fill="#e05a3a" font-size="8">✦</text>
+        </svg>
+        <div class="state-card__label">Happy</div>
+      </div>
+      <div class="state-card logo-card--light">
+        <svg viewBox="0 0 60 75" style="width:55px;height:68px;">
+          <ellipse cx="30" cy="38" rx="14" ry="17" fill="#1a1a1a"/>
+          <circle cx="30" cy="20" r="10" fill="#1a1a1a"/>
+          <path d="M25 21 L20 25 L20 28 L26 27 L27 24 Z" fill="#e05a3a"/>
+          <circle cx="28" cy="17" r="3" fill="#fff"/>
+          <circle cx="34" cy="17" r="3" fill="#fff"/>
+          <circle cx="27" cy="17.5" r="1.5" fill="#1a1a1a"/>
+          <circle cx="33" cy="17.5" r="1.5" fill="#1a1a1a"/>
+          <circle cx="30" cy="25" r="2" fill="#fff"/>
+          <line x1="26" y1="55" x2="24" y2="65" stroke="#e05a3a" stroke-width="2" stroke-linecap="round"/>
+          <line x1="34" y1="55" x2="36" y2="65" stroke="#e05a3a" stroke-width="2" stroke-linecap="round"/>
+          <ellipse cx="21" cy="68" rx="5" ry="2.5" fill="#e05a3a"/>
+          <ellipse cx="39" cy="68" rx="5" ry="2.5" fill="#1a1a1a"/>
+        </svg>
+        <div class="state-card__label">Oops / 404</div>
+      </div>
+      <div class="state-card logo-card--light">
+        <svg viewBox="0 0 60 75" style="width:55px;height:68px;">
+          <ellipse cx="30" cy="38" rx="14" ry="17" fill="#1a1a1a"/>
+          <circle cx="30" cy="20" r="10" fill="#1a1a1a"/>
+          <path d="M25 21 L20 25 L20 28 L26 27 L27 24 Z" fill="#e05a3a"/>
+          <circle cx="29" cy="17" r="2.5" fill="#fff"/>
+          <circle cx="29" cy="17.5" r="1.2" fill="#1a1a1a"/>
+          <line x1="27" y1="17.5" x2="24" y2="17.5" stroke="#fff" stroke-width=".8"/>
+          <line x1="31" y1="17.5" x2="34" y2="17.5" stroke="#fff" stroke-width=".8"/>
+          <circle cx="25" cy="43" r="1.5" fill="#e05a3a" opacity=".3"/>
+          <circle cx="30" cy="43" r="1.5" fill="#e05a3a" opacity=".6"/>
+          <circle cx="35" cy="43" r="1.5" fill="#e05a3a"/>
+          <line x1="26" y1="55" x2="24" y2="65" stroke="#e05a3a" stroke-width="2" stroke-linecap="round"/>
+          <line x1="34" y1="55" x2="36" y2="65" stroke="#e05a3a" stroke-width="2" stroke-linecap="round"/>
+          <ellipse cx="21" cy="68" rx="5" ry="2.5" fill="#e05a3a"/>
+          <ellipse cx="39" cy="68" rx="5" ry="2.5" fill="#1a1a1a"/>
+        </svg>
+        <div class="state-card__label">Building</div>
+      </div>
+      <div class="state-card logo-card--light">
+        <svg viewBox="0 0 60 75" style="width:55px;height:68px;">
+          <ellipse cx="30" cy="38" rx="14" ry="17" fill="#1a1a1a"/>
+          <circle cx="30" cy="20" r="10" fill="#1a1a1a"/>
+          <path d="M25 21 L20 25 L20 28 L26 27 L27 24 Z" fill="#e05a3a"/>
+          <path d="M26 18 Q29 15 32 18" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+          <rect x="25" y="38" width="10" height="7" rx="1" fill="#c94e30"/>
+          <line x1="30" y1="38" x2="30" y2="45" stroke="#e05a3a" stroke-width=".5"/>
+          <line x1="26" y1="55" x2="26" y2="65" stroke="#e05a3a" stroke-width="2" stroke-linecap="round"/>
+          <line x1="34" y1="55" x2="34" y2="65" stroke="#e05a3a" stroke-width="2" stroke-linecap="round"/>
+          <ellipse cx="26" cy="68" rx="5" ry="3" fill="#c4a882"/>
+          <ellipse cx="34" cy="68" rx="5" ry="3" fill="#c4a882"/>
+        </svg>
+        <div class="state-card__label">Praying</div>
+      </div>
+      <div class="state-card logo-card--light">
+        <svg viewBox="0 0 60 75" style="width:55px;height:68px;">
+          <ellipse cx="30" cy="38" rx="14" ry="17" fill="#1a1a1a"/>
+          <circle cx="30" cy="20" r="10" fill="#1a1a1a"/>
+          <path d="M25 21 L20 25 L20 28 L26 27 L27 24 Z" fill="#e05a3a"/>
+          <line x1="26" y1="18" x2="32" y2="18" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
+          <text x="38" y="15" fill="#888" font-size="6" font-weight="600">z</text>
+          <text x="42" y="10" fill="#888" font-size="5">z</text>
+          <line x1="26" y1="55" x2="24" y2="65" stroke="#e05a3a" stroke-width="2" stroke-linecap="round"/>
+          <line x1="34" y1="55" x2="36" y2="65" stroke="#e05a3a" stroke-width="2" stroke-linecap="round"/>
+          <ellipse cx="21" cy="68" rx="5" ry="2.5" fill="#e05a3a"/>
+          <ellipse cx="39" cy="68" rx="5" ry="2.5" fill="#1a1a1a"/>
+        </svg>
+        <div class="state-card__label">Sleeping</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 6. COLOR SYSTEM -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section class="section section--cream">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-header__label">06 · Colour Palette</div>
+      <div class="section-header__title">The system</div>
+    </div>
+    <div class="color-grid">
+      <div class="color-swatch" style="background:#e05a3a;color:#fff;">
+        <div class="color-swatch__name">Coral</div>
+        <div class="color-swatch__hex">#E05A3A · Primary</div>
+      </div>
+      <div class="color-swatch" style="background:#c94e30;color:#fff;">
+        <div class="color-swatch__name">Coral Dark</div>
+        <div class="color-swatch__hex">#C94E30 · Hover / Depth</div>
+      </div>
+      <div class="color-swatch" style="background:#f4a08e;color:#1a1a1a;">
+        <div class="color-swatch__name">Coral Light</div>
+        <div class="color-swatch__hex">#F4A08E · Accent</div>
+      </div>
+      <div class="color-swatch" style="background:#1a1a1a;color:#fff;">
+        <div class="color-swatch__name">Ink</div>
+        <div class="color-swatch__hex">#1A1A1A · Text / Dark BG</div>
+      </div>
+      <div class="color-swatch" style="background:#f8f6f2;color:#1a1a1a;border:1px solid #e8e4dd;">
+        <div class="color-swatch__name">Cream</div>
+        <div class="color-swatch__hex">#F8F6F2 · Light BG</div>
+      </div>
+      <div class="color-swatch" style="background:#ffffff;color:#1a1a1a;border:1px solid #ebebeb;">
+        <div class="color-swatch__name">White</div>
+        <div class="color-swatch__hex">#FFFFFF · Clean BG</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 7. TYPOGRAPHY -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-header__label">07 · Typography</div>
+      <div class="section-header__title">Three fonts. Three purposes.</div>
+    </div>
+
+    <div class="type-specimen">
+      <div class="type-specimen__label">Display — Playfair Display</div>
+      <div class="type-specimen__sample" style="font-family:var(--serif);font-size:clamp(2rem,4vw,3.5rem);font-weight:500;font-style:italic;color:#e05a3a;line-height:1.2;">
+        A higher calling.
+      </div>
+      <div class="type-specimen__meta">Headlines, hero text, logo wordmark. Always italic for "Odd." Weights: 400, 500, 600, 700.</div>
+    </div>
+
+    <div class="type-specimen">
+      <div class="type-specimen__label">Body — DM Sans</div>
+      <div class="type-specimen__sample" style="font-family:var(--sans);font-size:1.1rem;color:#666;max-width:600px;line-height:1.8;">
+        We build MVPs, craft brands, and accelerate growth for Christian founders who want to honour God with their business. Based in Kampala, serving the world.
+      </div>
+      <div class="type-specimen__meta">Body copy, navigation, buttons, UI text. Weights: 300, 400, 500, 600.</div>
+    </div>
+
+    <div class="type-specimen">
+      <div class="type-specimen__label">Code — JetBrains Mono</div>
+      <div class="type-specimen__sample" style="font-family:var(--mono);font-size:1rem;color:#888;line-height:1.8;">
+        $ npx create-oddshoes --name "FaithFlow"<br>
+        <span style="opacity:.5;">→ Building something that matters...</span>
+      </div>
+      <div class="type-specimen__meta">Logo "shoes" text, labels, captions, code snippets, .dev extension. Weights: 300, 400, 500.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 8. USAGE GUIDELINES -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section class="section section--dark">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-header__label">08 · Usage Guidelines</div>
+      <div class="section-header__title">Do's and Don'ts</div>
+    </div>
+
+    <div class="usage-grid">
+      <div class="usage-card usage-card--do" style="background:#1e1e1e;border-color:#333;">
+        <div class="usage-card__badge usage-card__badge--do">✓ Do</div>
+        <div class="usage-card__title" style="color:#fff;">Keep the mismatch</div>
+        <p style="color:#888;">"Odd" must always be in Playfair Display italic. "shoes" must always be in JetBrains Mono regular. This contrast IS the logo. Never set both in the same font.</p>
+      </div>
+      <div class="usage-card usage-card--dont" style="background:#1e1e1e;border-color:#333;">
+        <div class="usage-card__badge usage-card__badge--dont">✗ Don't</div>
+        <div class="usage-card__title" style="color:#fff;">Match the fonts</div>
+        <p style="color:#888;">Never set "Odd shoes" in a single typeface. The whole brand is built on the deliberate mismatch. If both words look the same, the meaning is lost.</p>
+      </div>
+      <div class="usage-card usage-card--do" style="background:#1e1e1e;border-color:#333;">
+        <div class="usage-card__badge usage-card__badge--do">✓ Do</div>
+        <div class="usage-card__title" style="color:#fff;">Use the cursor</div>
+        <p style="color:#888;">The blinking coral cursor is a signature element. Include it on digital/screen applications where animation is possible. On print, use a static coral line.</p>
+      </div>
+      <div class="usage-card usage-card--dont" style="background:#1e1e1e;border-color:#333;">
+        <div class="usage-card__badge usage-card__badge--dont">✗ Don't</div>
+        <div class="usage-card__title" style="color:#fff;">Recolour Solé</div>
+        <p style="color:#888;">Solé's body is always dark (#1A1A1A) or white on dark backgrounds. The beak is always coral. The shoes are always mismatched (coral sneaker + black dress shoe).</p>
+      </div>
+      <div class="usage-card usage-card--do" style="background:#1e1e1e;border-color:#333;">
+        <div class="usage-card__badge usage-card__badge--do">✓ Do</div>
+        <div class="usage-card__title" style="color:#fff;">Clear space</div>
+        <p style="color:#888;">Maintain minimum clear space equal to the height of the "O" on all sides of the logo. More space is always better. Let the brand breathe.</p>
+      </div>
+      <div class="usage-card usage-card--dont" style="background:#1e1e1e;border-color:#333;">
+        <div class="usage-card__badge usage-card__badge--dont">✗ Don't</div>
+        <div class="usage-card__title" style="color:#fff;">Add effects</div>
+        <p style="color:#888;">No drop shadows, gradients, bevels, outlines, or 3D effects on the wordmark. The logo's power is in its clean typographic contrast. Keep it flat and sharp.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- FOOTER -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section style="background:#1a1a1a;padding:3rem 0;text-align:center;">
+  <div class="container">
+    <div class="wm wm--sm" style="justify-content:center;margin-bottom:1rem;">
+      <span class="wm__odd" style="color:#e05a3a;">Odd</span>
+      <span class="wm__shoes" style="color:rgba(255,255,255,.3);">shoes</span>
+      <span class="wm__cursor" style="background:#e05a3a;height:.8rem;"></span>
+    </div>
+    <p style="font-family:var(--mono);font-size:.6rem;color:rgba(255,255,255,.15);letter-spacing:.15em;">Brand Identity System v1.0 · February 2026 · oddshoes.dev</p>
+  </div>
+</section>
+
+</body>
+</html>

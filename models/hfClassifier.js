@@ -38,18 +38,22 @@ const callHF = async (model, data, isJson = true) => {
  */
 const classifyImage = async (imageSource) => {
     try {
-        // Prepare image data
+        console.log("Starting pure AI pipeline...");
+        
+        // 1. Prepare image data
+        if (!imageSource) throw new Error("No imageSource provided to classifier");
         const base64Data = imageSource.replace(/^data:image\/\w+;base64,/, "");
         const buffer = Buffer.from(base64Data, 'base64');
+        console.log(`Image converted to buffer. Size: ${Math.round(buffer.length/1024)} KB`);
 
         // STAGE 1: Image Captioning
-        console.log(`Stage 1: Getting image description via ${CAPTION_MODEL}...`);
+        console.log(`Stage 1: Calling ${CAPTION_MODEL}...`);
         const captionResult = await callHF(CAPTION_MODEL, buffer, false);
         const description = captionResult[0]?.generated_text || "unidentified mechanical part";
-        console.log("Image Description:", description);
+        console.log("Stage 1 Success. Description:", description);
 
         // STAGE 2: LLM Diagnosis
-        console.log(`Stage 2: Generating dynamic diagnosis via ${TEXT_MODEL}...`);
+        console.log(`Stage 2: Calling ${TEXT_MODEL}...`);
         const prompt = `[INST] You are an expert automotive mechanic. Analyze this part description: "${description}". 
 Return a JSON object with exactly these keys: 
 "part" (the name of the part), 
@@ -65,30 +69,27 @@ Return ONLY valid JSON. [/INST]`;
         });
 
         const generatedText = textResult[0]?.generated_text || "";
+        console.log("Stage 2 Raw Response:", generatedText);
         
         // Extract JSON from response (handling potential markdown formatting)
         const jsonMatch = generatedText.match(/\{[\s\S]*\}/);
         const output = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
 
-        if (!output) throw new Error("Failed to parse AI response into JSON");
+        if (!output) {
+            console.error("Stage 3 Failure: Could not extract JSON from textResult");
+            throw new Error("AI response was not in expected JSON format");
+        }
 
+        console.log("Pipeline Success. Final output:", output);
         return {
             ...output,
-            confidence: 0.95, // AI confidence is high for generative reasoning
+            confidence: 0.95,
             originalLabel: `AI Reasoning based on: ${description}`
         };
 
     } catch (error) {
-        console.error("Pure AI Pipeline error:", error.message);
-        return {
-            part: "Mechanical Component",
-            diagnosis: "The AI is having trouble analyzing this specific image. Please ensure the part is clearly visible.",
-            solutions: ["Try a clearer photo", "Check connection to AI services"],
-            tools: ["Smartphone camera"],
-            risk: "Unknown",
-            confidence: 0,
-            originalLabel: `Error: ${error.message}`
-        };
+        console.error("CRITICAL AI Pipeline Error:", error.message);
+        throw error; // Rethrow to let the router handle the 500 properly with log
     }
 };
 

@@ -35,7 +35,37 @@ const CameraScreen = () => {
     setCameraActive(false);
   }, [stream]);
 
-  const capturePhoto = useCallback(() => {
+  const compressImage = (base64: string, maxWidth = 1024, maxHeight = 1024): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = base64;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxWidth) {
+            height *= maxWidth / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width *= maxHeight / height;
+            height = maxHeight;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.7)); // 70% quality, resized
+      };
+    });
+  };
+
+  const capturePhoto = useCallback(async () => {
     if (!videoRef.current || !canvasRef.current) return;
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -43,8 +73,11 @@ const CameraScreen = () => {
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext("2d");
     ctx?.drawImage(video, 0, 0);
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
-    setCapturedImage(dataUrl);
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+    
+    // Compress immediately
+    const compressed = await compressImage(dataUrl);
+    setCapturedImage(compressed);
     stopCamera();
   }, [stopCamera]);
 
@@ -52,8 +85,10 @@ const CameraScreen = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
-      setCapturedImage(ev.target?.result as string);
+    reader.onload = async (ev) => {
+      const rawBase64 = ev.target?.result as string;
+      const compressed = await compressImage(rawBase64);
+      setCapturedImage(compressed);
       stopCamera();
     };
     reader.readAsDataURL(file);

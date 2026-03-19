@@ -45,6 +45,7 @@ const classifyImage = async (imageSource) => {
             headers: {
                 "Authorization": `Bearer ${apiToken}`,
                 "Content-Type": "application/json",
+                "x-wait-for-model": "true" // Automatically wait for model to load
             },
             body: JSON.stringify({
                 inputs: base64Data,

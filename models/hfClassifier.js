@@ -1,32 +1,9 @@
-const { pipeline, env } = require('@xenova/transformers');
 const fs = require('fs');
 const path = require('path');
 
-// Configure Transformers.js to work in Node environment (Vercel)
-env.allowLocalModels = false;
-env.cacheDir = '/tmp'; // Vercel only allows writing to /tmp
-env.useBrowserCache = false; // Disable browser cache in Node environment
-
-let classifier = null;
 const KNOWLEDGE_BASE_PATH = path.join(__dirname, '../data/knowledge.json');
-
-/**
- * Loads the CLIP Zero-Shot Classification model.
- */
-const loadModel = async () => {
-    if (classifier) return classifier;
-    try {
-        console.log("Loading Hugging Face CLIP model (Phase 3)...");
-        // We use a small, efficient version of CLIP
-        classifier = await pipeline('zero-shot-image-classification', 'Xenova/clip-vit-base-patch32');
-        console.log("Hugging Face model loaded!");
-        return classifier;
-    } catch (error) {
-        console.error("Vercel Model Loading Error:", error.message);
-        // We don't throw here, instead we return null so the classifier can use a fallback
-        return null;
-    }
-};
+const HF_MODEL = "openai/clip-vit-base-patch32";
+const HF_API_URL = `https://api-inference.huggingface.co/models/${HF_MODEL}`;
 
 /**
  * Reads labels from the knowledge base.
@@ -34,7 +11,6 @@ const loadModel = async () => {
 const getCandidateLabels = () => {
     try {
         const knowledgeBase = JSON.parse(fs.readFileSync(KNOWLEDGE_BASE_PATH, 'utf8'));
-        // We use the descriptions/names from the knowledge base as candidate labels
         return Object.keys(knowledgeBase).map(key => key.replace('_', ' '));
     } catch (error) {
         console.error("Error reading knowledge labels:", error);
@@ -43,39 +19,65 @@ const getCandidateLabels = () => {
 };
 
 /**
- * Classifies image using Zero-Shot CLIP.
+ * Classifies image using HF Inference API (Zero-Shot).
  */
 const classifyImage = async (imageSource) => {
     try {
-        const pipe = await loadModel();
         const labels = getCandidateLabels();
+        const apiToken = process.env.HF_TOKEN;
 
-        if (!pipe) {
-            console.warn("Using Server-side keyword fallback (Model failed to load)");
+        if (!apiToken) {
+            console.warn("HF_TOKEN missing. Using server-side fallback.");
             return {
-                part: labels[0], // Fallback to first label
+                part: labels[0],
                 confidence: 0.1,
-                originalLabel: "Server-side Fallback (Model loading issue)"
+                originalLabel: "Fallback (Missing HF_TOKEN)"
             };
         }
 
-        // 1. Perform classification
-        const results = await pipe(imageSource, labels);
-        console.log("HF Zero-Shot Results:", results);
-
-        const bestMatch = results[0];
+        // Prepare base64 image (remove data URL prefix if present)
+        const base64Data = imageSource.replace(/^data:image\/\w+;base64,/, "");
         
-        return {
-            part: bestMatch.label,
-            confidence: bestMatch.score,
-            originalLabel: `CLIP matched: ${bestMatch.label}`
-        };
+        console.log(`Calling Hugging Face Inference API for model: ${HF_MODEL}...`);
+        
+        const response = await fetch(HF_API_URL, {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${apiToken}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                inputs: base64Data,
+                parameters: { candidate_labels: labels }
+            }),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HF API Error (${response.status}): ${errorText}`);
+        }
+
+        const results = await response.json();
+        console.log("HF Inference Result:", results);
+
+        // HF Zero-Shot returns an array of { label, score }
+        if (Array.isArray(results) && results.length > 0) {
+            const bestMatch = results[0];
+            return {
+                part: bestMatch.label,
+                confidence: bestMatch.score,
+                originalLabel: `HF API matched: ${bestMatch.label}`
+            };
+        }
+
+        throw new Error("Unexpected response format from HF API");
+
     } catch (error) {
-        console.error("HF Classification error:", error);
+        console.error("HF Inference API error:", error.message);
         return {
             part: "unknown",
             confidence: 0,
-            originalLabel: `Error: ${error.message}`
+            originalLabel: `API Error: ${error.message}`
         };
     }
 };

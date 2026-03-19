@@ -2,9 +2,10 @@ const { pipeline, env } = require('@xenova/transformers');
 const fs = require('fs');
 const path = require('path');
 
-// Configure Transformers.js to work in Node environment
+// Configure Transformers.js to work in Node environment (Vercel)
 env.allowLocalModels = false;
-env.useBrowserCache = true;
+env.cacheDir = '/tmp'; // Vercel only allows writing to /tmp
+env.useBrowserCache = false; // Disable browser cache in Node environment
 
 let classifier = null;
 const KNOWLEDGE_BASE_PATH = path.join(__dirname, '../data/knowledge.json');

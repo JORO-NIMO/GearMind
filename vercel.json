@@ -12,6 +12,10 @@
     {
       "source": "/save-case",
       "destination": "/api/index"
+    },
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
     }
   ],
   "headers": [

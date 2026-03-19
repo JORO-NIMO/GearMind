@@ -39,7 +39,7 @@ const callHF = async (model, data) => {
  * 1. Image Captioning (What is in the image?)
  * 2. LLM Reasoning (What's wrong and how to fix it?)
  */
-const classifyImage = async (imageSource) => {
+export const classifyImage = async (imageSource) => {
     try {
         console.log("Starting pure AI pipeline...");
         
@@ -94,5 +94,3 @@ Return ONLY valid JSON. [/INST]`;
         throw error; // Rethrow to let the router handle the 500 properly with log
     }
 };
-
-module.exports = { classifyImage };

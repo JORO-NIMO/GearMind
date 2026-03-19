@@ -1,6 +1,6 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const { classifyImage } = require('../../models/hfClassifier');
+import { classifyImage } from '../../models/hfClassifier.js';
 
 /**
  * POST /analyze
@@ -28,4 +28,4 @@ router.post('/', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

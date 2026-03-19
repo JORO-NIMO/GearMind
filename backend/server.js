@@ -1,7 +1,12 @@
-const express = require('express');
-const cors = require('cors');
-const bodyParser = require('body-parser');
-const analyzeRoute = require('./routes/analyze');
+import express from 'express';
+import cors from 'cors';
+import bodyParser from 'body-parser';
+import analyzeRoute from './routes/analyze.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -16,7 +21,7 @@ app.use('/analyze', analyzeRoute);
 // AI Health Check
 app.get('/analyze/test', async (req, res) => {
   try {
-    const { classifyImage } = require('./models/hfClassifier');
+    const { classifyImage } = await import('../models/hfClassifier.js');
     // Using a very small string to test token validity
     const result = await classifyImage("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==");
     res.json({ status: "ok", token_valid: true, result });
@@ -33,12 +38,13 @@ app.post('/save-case', (req, res) => {
   res.json({ success: true, message: "Case saved locally" });
 });
 
-// Only start the server if this file is run directly (not as a module)
-if (require.main === module) {
+// Start the server (using a more ESM-friendly check)
+const isMain = import.meta.url.startsWith('file:');
+if (isMain && process.argv[1] && process.argv[1].endsWith('server.js')) {
   app.listen(PORT, () => {
     console.log(`Backend server running on http://localhost:${PORT}`);
   });
 }
 
-// Export for Vercel serverless functions
-module.exports = app;
+// Export for Vercel
+export default app;

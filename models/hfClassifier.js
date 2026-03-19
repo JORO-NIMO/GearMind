@@ -9,22 +9,27 @@ const HF_API_BASE = "https://api-inference.huggingface.co/models/";
 /**
  * Helper to call Hugging Face Inference API.
  */
-const callHF = async (model, data, isJson = true) => {
+const callHF = async (model, data) => {
     const apiToken = process.env.HF_TOKEN;
-    if (!apiToken) throw new Error("HF_TOKEN missing");
+    if (!apiToken) {
+        console.error("HF_TOKEN is undefined in process.env");
+        throw new Error("HF_TOKEN missing on server. Please set it in Vercel settings.");
+    }
 
+    console.log(`Calling HF model: ${model}...`);
     const response = await fetch(`${HF_API_BASE}${model}`, {
         method: "POST",
         headers: {
             "Authorization": `Bearer ${apiToken}`,
-            "Content-Type": isJson ? "application/json" : "application/octet-stream",
+            "Content-Type": "application/json",
             "x-wait-for-model": "true"
         },
-        body: isJson ? JSON.stringify(data) : data,
+        body: JSON.stringify(data),
     });
 
     if (!response.ok) {
         const errorText = await response.text();
+        console.error(`HF API Error for ${model}:`, errorText);
         throw new Error(`HF API Error (${model}) [${response.status}]: ${errorText}`);
     }
 
@@ -43,12 +48,11 @@ const classifyImage = async (imageSource) => {
         // 1. Prepare image data
         if (!imageSource) throw new Error("No imageSource provided to classifier");
         const base64Data = imageSource.replace(/^data:image\/\w+;base64,/, "");
-        const buffer = Buffer.from(base64Data, 'base64');
-        console.log(`Image converted to buffer. Size: ${Math.round(buffer.length/1024)} KB`);
+        console.log(`Image data prepared. Base64 length: ${base64Data.length}`);
 
         // STAGE 1: Image Captioning
         console.log(`Stage 1: Calling ${CAPTION_MODEL}...`);
-        const captionResult = await callHF(CAPTION_MODEL, buffer, false);
+        const captionResult = await callHF(CAPTION_MODEL, { inputs: base64Data });
         const description = captionResult[0]?.generated_text || "unidentified mechanical part";
         console.log("Stage 1 Success. Description:", description);
 

@@ -23,7 +23,10 @@ export const analyzeImage = async (image: string): Promise<AnalysisResponse> => 
       body: JSON.stringify({ image }),
     });
 
-    if (!response.ok) throw new Error('Backend failed');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Backend failed');
+    }
 
     return await response.json();
   } catch (error) {
@@ -54,7 +57,10 @@ export const saveCase = async (data: any) => {
       body: JSON.stringify({ data }),
     });
 
-    if (!response.ok) throw new Error('Backend failed');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Backend failed');
+    }
     return await response.json();
   } catch (error) {
     console.warn("Backend unavailable, saving to local storage:", error);

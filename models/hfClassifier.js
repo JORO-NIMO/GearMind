@@ -2,7 +2,7 @@
 const CAPTION_MODEL = "Salesforce/blip-image-captioning-large";
 const TEXT_MODEL = "mistralai/Mistral-7B-Instruct-v0.2";
 
-const HF_API_BASE = "https://router.huggingface.co/models/";
+const HF_API_BASE = "https://router.huggingface.co/hf-inference/models/";
 
 /**
  * Helper to call Hugging Face Inference API.

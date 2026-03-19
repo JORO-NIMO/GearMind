@@ -15,13 +15,17 @@ const KNOWLEDGE_BASE_PATH = path.join(__dirname, '../data/knowledge.json');
  */
 const loadModel = async () => {
     if (classifier) return classifier;
-    console.log("Loading Hugging Face CLIP model (Phase 3)...");
-    
-    // We use a small, efficient version of CLIP
-    classifier = await pipeline('zero-shot-image-classification', 'Xenova/clip-vit-base-patch32');
-    
-    console.log("Hugging Face model loaded!");
-    return classifier;
+    try {
+        console.log("Loading Hugging Face CLIP model (Phase 3)...");
+        // We use a small, efficient version of CLIP
+        classifier = await pipeline('zero-shot-image-classification', 'Xenova/clip-vit-base-patch32');
+        console.log("Hugging Face model loaded!");
+        return classifier;
+    } catch (error) {
+        console.error("Vercel Model Loading Error:", error.message);
+        // We don't throw here, instead we return null so the classifier can use a fallback
+        return null;
+    }
 };
 
 /**
@@ -46,13 +50,19 @@ const classifyImage = async (imageSource) => {
         const pipe = await loadModel();
         const labels = getCandidateLabels();
 
-        // 1. Perform classification
-        // CLIP converts the image and labels into embeddings and finds the best match
-        const results = await pipe(imageSource, labels);
+        if (!pipe) {
+            console.warn("Using Server-side keyword fallback (Model failed to load)");
+            return {
+                part: labels[0], // Fallback to first label
+                confidence: 0.1,
+                originalLabel: "Server-side Fallback (Model loading issue)"
+            };
+        }
 
+        // 1. Perform classification
+        const results = await pipe(imageSource, labels);
         console.log("HF Zero-Shot Results:", results);
 
-        // 2. Return the best match
         const bestMatch = results[0];
         
         return {
@@ -62,7 +72,11 @@ const classifyImage = async (imageSource) => {
         };
     } catch (error) {
         console.error("HF Classification error:", error);
-        throw error;
+        return {
+            part: "unknown",
+            confidence: 0,
+            originalLabel: `Error: ${error.message}`
+        };
     }
 };
 

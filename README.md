@@ -39,5 +39,16 @@ npm run dev
 - `/data`: Local knowledge base (`knowledge.json`).
 - `/src`: React frontend screens and components.
 
+## 🚀 Deployment (Vercel)
+
+This project is configured for **Vercel** deployment:
+- **Frontend**: Vite (Root)
+- **Backend**: Express (Vercel Serverless Functions in `/api`)
+
+### Steps to Deploy
+1. Push your changes to GitHub.
+2. Import the repository to Vercel.
+3. Vercel will automatically detect the settings and deploy both the frontend and backend.
+
 ---
 *AI gives suggestions. You make the final call.*

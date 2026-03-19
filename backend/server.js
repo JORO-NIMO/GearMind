@@ -43,6 +43,12 @@ app.post('/save-case', (req, res) => {
   res.json({ success: true, message: "Case saved locally" });
 });
 
-app.listen(PORT, () => {
-  console.log(`Backend server running on http://localhost:${PORT}`);
-});
+// Only start the server if this file is run directly (not as a module)
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Backend server running on http://localhost:${PORT}`);
+  });
+}
+
+// Export for Vercel serverless functions
+module.exports = app;

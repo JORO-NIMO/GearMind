@@ -3,7 +3,7 @@
  * Handles analysis and saving cases with offline fallback.
  */
 
-const API_BASE_URL = 'http://localhost:3001';
+const API_BASE_URL = ''; // Use relative paths for Vercel deployment
 
 const analyzeImage = async (image) => {
   try {

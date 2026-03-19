@@ -1,6 +1,4 @@
-const fs = require('fs');
-const path = require('path');
-
+// Generative AI Pipeline using Hugging Face Inference API
 const CAPTION_MODEL = "Salesforce/blip-image-captioning-large";
 const TEXT_MODEL = "mistralai/Mistral-7B-Instruct-v0.2";
 

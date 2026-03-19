@@ -1,43 +1,25 @@
-import knowledgeBase from '../../data/knowledge.json';
-
 /**
  * Local AI Classifier (Simplified Fallback)
- * Removed @xenova/transformers to prevent 160MB model download in browser.
+ * Removed all local models and mock data to save resources.
  */
 export const localClassifyImage = async (imageSrc: string) => {
-    console.warn("Local AI classification is disabled to save resources. Using offline fallback.");
+    console.warn("Local AI classification is disabled. Active internet connection required for AI features.");
     
-    // Simple mock logic: just use the first available label from knowledge base
-    const labels = Object.keys(knowledgeBase);
-    const defaultPart = labels[0] || "radiator";
-
     return {
-        part: defaultPart.replace('_', ' '),
-        confidence: 0.1,
-        originalLabel: "Offline Fallback (Local AI removed for performance)"
+        part: "Mechanical Component",
+        confidence: 0,
+        originalLabel: "Offline - AI Unavailable"
     };
 };
 
 /**
- * Local Rules Engine
+ * Local Rules Engine (Decommissioned)
  */
 export const localProcessDiagnosis = (detectedPart: string) => {
-    const partKey = detectedPart.toLowerCase().replace(' ', '_');
-    const partInfo = (knowledgeBase as any)[partKey];
-
-    if (!partInfo) {
-        return {
-            diagnosis: `Detected ${detectedPart}. No specific rules found in local knowledge base.`,
-            solutions: ["Perform manual inspection"],
-            tools: ["General toolkit"],
-            risk: "Unknown",
-        };
-    }
-
     return {
-        diagnosis: partInfo.diagnosis,
-        solutions: partInfo.solutions,
-        tools: partInfo.tools,
-        risk: partInfo.risk,
+        diagnosis: "You are currently offline. GearMind requires an internet connection to generate dynamic AI diagnoses and repair steps.",
+        solutions: ["Reconnect to the internet", "Retry the analysis once online"],
+        tools: ["Stable Internet Connection"],
+        risk: "Unknown",
     };
 };

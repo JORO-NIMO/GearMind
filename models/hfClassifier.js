@@ -8,7 +8,13 @@ const TEXT_MODELS = (
     .split(",")
     .map((value) => value.trim())
     .filter(Boolean);
-const HF_API_BASE = "https://router.huggingface.co/hf-inference/models/";
+const HF_API_BASES = (
+    process.env.HF_API_BASES
+    || "https://router.huggingface.co/hf-inference/models/,https://api-inference.huggingface.co/models/"
+)
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
 
 const AnalysisSchema = z.object({
     part: z.string().min(1),
@@ -146,44 +152,58 @@ export const callHF = async (model, data, options = {}) => {
     }
 
     let lastError;
-    for (let attempt = 0; attempt <= retries; attempt += 1) {
-        const controller = new AbortController();
-        const timeoutHandle = setTimeout(() => controller.abort(), timeoutMs);
+    for (const baseUrl of HF_API_BASES) {
+        for (let attempt = 0; attempt <= retries; attempt += 1) {
+            const controller = new AbortController();
+            const timeoutHandle = setTimeout(() => controller.abort(), timeoutMs);
 
-        try {
-            const response = await fetchImpl(`${HF_API_BASE}${model}`, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${apiToken}`,
-                    "Content-Type": "application/json",
-                    "x-wait-for-model": "true",
-                },
-                body: JSON.stringify(data),
-                signal: controller.signal,
-            });
+            try {
+                const response = await fetchImpl(`${baseUrl}${model}`, {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${apiToken}`,
+                        "Content-Type": "application/json",
+                        "x-wait-for-model": "true",
+                    },
+                    body: JSON.stringify(data),
+                    signal: controller.signal,
+                });
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                const retriable = RETRIABLE_STATUSES.has(response.status);
-                const message = `HF API Error (${model}) [${response.status}]: ${errorText}`;
-                if (!retriable || attempt === retries) {
-                    throw new Error(message);
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    const retriable = RETRIABLE_STATUSES.has(response.status);
+                    const message = `HF API Error (${model}) [${response.status}] via ${baseUrl}: ${errorText}`;
+
+                    // 404 is frequently endpoint/model availability mismatch; move to next base URL.
+                    if (response.status === 404) {
+                        lastError = new Error(message);
+                        break;
+                    }
+
+                    if (!retriable || attempt === retries) {
+                        throw new Error(message);
+                    }
+                    lastError = new Error(message);
+                    await sleep(300 * (attempt + 1));
+                    continue;
                 }
-                lastError = new Error(message);
-                await sleep(300 * (attempt + 1));
-                continue;
-            }
 
-            return await response.json();
-        } catch (error) {
-            const isAbort = error?.name === "AbortError";
-            if (attempt === retries) {
-                throw new Error(isAbort ? `HF request timed out (${model})` : error.message);
+                return await response.json();
+            } catch (error) {
+                const isAbort = error?.name === "AbortError";
+                if (attempt === retries) {
+                    lastError = new Error(isAbort ? `HF request timed out (${model}) via ${baseUrl}` : error.message);
+                    break;
+                }
+                lastError = error;
+                await sleep(300 * (attempt + 1));
+            } finally {
+                clearTimeout(timeoutHandle);
             }
-            lastError = error;
-            await sleep(300 * (attempt + 1));
-        } finally {
-            clearTimeout(timeoutHandle);
+        }
+
+        if (lastError) {
+            console.warn(`HF base URL failed for ${model}:`, lastError.message);
         }
     }
 

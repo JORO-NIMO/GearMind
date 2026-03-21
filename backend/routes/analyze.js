@@ -10,8 +10,16 @@ router.post('/', async (req, res) => {
   try {
     const { image } = req.body;
 
-    if (!image) {
+    if (!image || typeof image !== 'string') {
       return res.status(400).json({ error: "No image provided" });
+    }
+
+    if (!image.startsWith('data:image/')) {
+      return res.status(400).json({ error: 'Invalid image format. Expected a data URL.' });
+    }
+
+    if (image.length > 12_000_000) {
+      return res.status(413).json({ error: 'Image payload too large' });
     }
 
     // 1. Pass image to Dynamic AI pipeline (VLM + LLM)

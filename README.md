@@ -1,6 +1,6 @@
 # GearMind - AI Mechanic Assistant
 
-**GearMind** is an offline-first AI assistant designed for field mechanics. Scan a part, get a diagnosis, and decide on the fix—all without needing a stable internet connection.
+**GearMind** is an AI-assisted mechanic workflow app: scan a part, receive a structured diagnosis, and review repair guidance before acting.
 
 ## 🚀 Getting Started
 
@@ -26,18 +26,32 @@ The backend runs on `http://localhost:3001`.
 npm run dev
 ```
 
+## Environment Variables
+
+Create environment variables for backend runtime:
+
+- `HF_TOKEN` (required): Hugging Face API token for inference calls.
+- `FRONTEND_URLS` (optional): comma-separated CORS allowlist, for example `https://your-app.vercel.app,http://localhost:8080`.
+- `API_KEY` (optional): if set, requests to `/analyze` and `/save-case` must include `x-api-key`.
+- `RATE_LIMIT_WINDOW_MS` (optional): rate-limiter window in milliseconds. Default `60000`.
+- `RATE_LIMIT_MAX_ANALYZE` (optional): max analyze requests per window per IP. Default `20`.
+- `RATE_LIMIT_MAX_SAVE_CASE` (optional): max save requests per window per IP. Default `30`.
+- `CASE_STORAGE_FILE` (optional): NDJSON file path for saved cases. Default `tmp/cases.ndjson`.
+
 ## 🧠 Features
-- **AI Part Classification**: Identifies mechanical parts from photos (Mock AI included).
-- **Rules Engine**: Matches parts to a local knowledge base for diagnosis and solutions.
-- **Offline-First**: Falls back to local JS modules if the backend is unreachable.
-- **Save Case**: Save diagnostic results locally or to the backend.
+- **Two-Stage AI Pipeline**: Image captioning + LLM diagnosis with structured output.
+- **Validated AI Output**: Server-side schema validation guarantees response shape.
+- **Resilient Inference Calls**: Timeout + retry logic for external model requests.
+- **Safe Fallback Response**: Returns a normalized fallback diagnosis when AI output is invalid.
+- **Rate-Limited Endpoints**: Protects `/analyze` and `/save-case` from abuse.
+- **Persistent Case Storage**: Saves cases as append-only NDJSON on the backend.
 
 ## 🗂️ Project Structure
-- `/frontend`: API services and integration.
-- `/backend`: Node.js server, rules engine, and routes.
-- `/models`: Pluggable AI classifier (mock).
-- `/data`: Local knowledge base (`knowledge.json`).
-- `/src`: React frontend screens and components.
+- `/api`: Vercel serverless entrypoint.
+- `/backend`: Express server and API routes.
+- `/models`: AI inference + validation pipeline.
+- `/src`: React frontend screens, components, and tests.
+- `/tmp`: local case storage output (`cases.ndjson`).
 
 ## 🚀 Deployment (Vercel)
 

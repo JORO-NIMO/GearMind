@@ -28,19 +28,29 @@ const ResultScreen = () => {
   const [diagnosis, setDiagnosis] = useState<AnalysisResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+
+  const runAnalysis = async () => {
+    if (!image) return;
+    setLoading(true);
+    setAnalysisError(null);
+
+    try {
+      const result = await analyzeImage(image);
+      setDiagnosis(result);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to analyze image";
+      setDiagnosis(null);
+      setAnalysisError(message);
+      toast.error("Failed to analyze image");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (image) {
-      analyzeImage(image)
-        .then((d) => {
-          setDiagnosis(d);
-          setLoading(false);
-        })
-        .catch((err) => {
-          console.error(err);
-          toast.error("Failed to analyze image");
-          setLoading(false);
-        });
+      runAnalysis();
     }
   }, [image]);
 
@@ -84,6 +94,16 @@ const ResultScreen = () => {
                 <Loader2 className="w-5 h-5 text-background animate-spin" />
                 <span className="text-sm font-mono text-background/80">Initializing AI expert & analyzing...</span>
               </motion.div>
+            ) : analysisError ? (
+              <motion.div
+                key="error"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-3"
+              >
+                <AlertTriangle className="w-5 h-5 text-warning" />
+                <span className="text-sm font-mono text-background/90">Analysis failed. Try again.</span>
+              </motion.div>
             ) : (
               <motion.div
                 key="result"
@@ -108,6 +128,44 @@ const ResultScreen = () => {
 
       {/* Content */}
       <AnimatePresence>
+        {!loading && !diagnosis && analysisError && (
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+            className="flex-1 px-5 pb-8 -mt-2"
+          >
+            <div className="rounded-lg border border-warning/30 bg-warning/10 p-4 mb-6">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-foreground mb-1">Could not complete AI analysis</p>
+                  <p className="text-sm text-muted-foreground">{analysisError}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={runAnalysis}
+                className="w-full h-14 rounded-xl bg-primary text-primary-foreground font-display font-semibold text-base flex items-center justify-center gap-2 shadow-lg"
+              >
+                <Loader2 className="w-5 h-5" />
+                Retry Analysis
+              </motion.button>
+
+              <button
+                onClick={() => navigate("/camera")}
+                className="w-full h-14 rounded-xl border border-border bg-card text-foreground font-display font-semibold text-base flex items-center justify-center gap-2"
+              >
+                <Camera className="w-5 h-5" />
+                Retake Photo
+              </button>
+            </div>
+          </motion.div>
+        )}
+
         {!loading && diagnosis && (
           <motion.div
             initial={{ opacity: 0, y: 30 }}

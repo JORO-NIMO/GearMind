@@ -10,27 +10,12 @@
       "destination": "/api/index"
     },
     {
-      "source": "/rules",
-      "destination": "/api/index"
-    },
-    {
       "source": "/save-case",
       "destination": "/api/index"
     },
     {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        }
-      ]
     }
   ],
   "functions": {

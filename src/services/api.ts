@@ -1,5 +1,3 @@
-import { localClassifyImage, localProcessDiagnosis } from './localLogic';
-
 const API_BASE_URL = import.meta.env.VITE_API_URL || ''; // Relative paths for Vercel
 
 export interface AnalysisResponse {
@@ -13,36 +11,21 @@ export interface AnalysisResponse {
 }
 
 /**
- * analyzes an image using the backend or local logic if offline.
+ * Analyzes an image using the backend AI pipeline.
  */
 export const analyzeImage = async (image: string): Promise<AnalysisResponse> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/analyze`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image }),
-    });
+  const response = await fetch(`${API_BASE_URL}/analyze`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ image }),
+  });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || 'Backend failed');
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.warn("Backend unavailable, using local logic:", error);
-    
-    // Fallback to local logic
-    const classification = await localClassifyImage(image);
-    const diagnosis = localProcessDiagnosis(classification.part);
-
-    return {
-      part: classification.part,
-      confidence: classification.confidence,
-      originalLabel: classification.originalLabel,
-      ...diagnosis,
-    } as AnalysisResponse;
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Backend failed');
   }
+
+  return await response.json();
 };
 
 /**

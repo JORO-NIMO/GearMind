@@ -1,96 +1,227 @@
-// Generative AI Pipeline using Hugging Face Inference API
+import { z } from "zod";
+
 const CAPTION_MODEL = "Salesforce/blip-image-captioning-large";
 const TEXT_MODEL = "mistralai/Mistral-7B-Instruct-v0.2";
-
 const HF_API_BASE = "https://router.huggingface.co/hf-inference/models/";
 
-/**
- * Helper to call Hugging Face Inference API.
- */
-const callHF = async (model, data) => {
-    const apiToken = process.env.HF_TOKEN;
-    if (!apiToken) {
-        console.error("HF_TOKEN is undefined in process.env");
-        throw new Error("HF_TOKEN missing on server. Please set it in Vercel settings.");
-    }
+const AnalysisSchema = z.object({
+    part: z.string().min(1),
+    diagnosis: z.string().min(1),
+    solutions: z.array(z.string().min(1)).min(1).max(5),
+    tools: z.array(z.string().min(1)).min(1).max(5),
+    risk: z.enum(["Low", "Medium", "High", "Unknown"]),
+});
 
-    console.log(`Calling HF model: ${model}...`);
-    const response = await fetch(`${HF_API_BASE}${model}`, {
-        method: "POST",
-        headers: {
-            "Authorization": `Bearer ${apiToken}`,
-            "Content-Type": "application/json",
-            "x-wait-for-model": "true"
-        },
-        body: JSON.stringify(data),
-    });
+const RETRIABLE_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504]);
 
-    if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`HF API Error for ${model}:`, errorText);
-        throw new Error(`HF API Error (${model}) [${response.status}]: ${errorText}`);
-    }
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-    return await response.json();
+const normalizeRisk = (risk) => {
+    if (!risk) return "Unknown";
+    const value = String(risk).trim().toLowerCase();
+    if (value === "low") return "Low";
+    if (value === "medium") return "Medium";
+    if (value === "high") return "High";
+    return "Unknown";
 };
 
-/**
- * Analyses an image using a two-stage AI pipeline:
- * 1. Image Captioning (What is in the image?)
- * 2. LLM Reasoning (What's wrong and how to fix it?)
- */
-export const classifyImage = async (imageSource) => {
+const normalizeList = (value, fallback) => {
+    if (!Array.isArray(value)) return fallback;
+    const compact = value
+        .map((item) => String(item || "").trim())
+        .filter(Boolean)
+        .slice(0, 5);
+    return compact.length ? compact : fallback;
+};
+
+const extractBalancedJsonObjects = (text) => {
+    const candidates = [];
+    let depth = 0;
+    let start = -1;
+
+    for (let i = 0; i < text.length; i += 1) {
+        const char = text[i];
+        if (char === "{") {
+            if (depth === 0) start = i;
+            depth += 1;
+        } else if (char === "}") {
+            if (depth > 0) {
+                depth -= 1;
+                if (depth === 0 && start !== -1) {
+                    candidates.push(text.slice(start, i + 1));
+                    start = -1;
+                }
+            }
+        }
+    }
+
+    return candidates;
+};
+
+const extractCodeBlockCandidates = (text) => {
+    const candidates = [];
+    const fencedRegex = /```(?:json)?\s*([\s\S]*?)```/gi;
+    let match = fencedRegex.exec(text);
+
+    while (match) {
+        candidates.push(match[1]);
+        match = fencedRegex.exec(text);
+    }
+
+    return candidates;
+};
+
+export const parseJsonFromModelText = (text) => {
+    if (!text || typeof text !== "string") {
+        throw new Error("Empty model response");
+    }
+
+    const rawCandidates = [
+        ...extractCodeBlockCandidates(text),
+        ...extractBalancedJsonObjects(text),
+    ];
+
+    for (const candidate of rawCandidates) {
+        try {
+            const parsed = JSON.parse(candidate);
+            if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+                return parsed;
+            }
+        } catch {
+            // keep trying other candidates
+        }
+    }
+
+    throw new Error("No valid JSON object found in model response");
+};
+
+export const buildFallbackAnalysis = (description, reason = "unknown") => ({
+    part: description || "Mechanical component",
+    diagnosis: "AI analysis was partially unavailable. Perform a manual inspection before repair.",
+    solutions: [
+        "Inspect visible wear, leaks, and mounting points",
+        "Check service manual specs for this component",
+        "Run a targeted functional test before replacement",
+    ],
+    tools: ["Flashlight", "Multimeter", "Service manual"],
+    risk: "Unknown",
+    confidence: 0.35,
+    originalLabel: `Fallback (${reason}) based on: ${description || "unknown part"}`,
+});
+
+export const validateAndNormalizeAnalysis = (payload) => {
+    const normalized = {
+        part: String(payload?.part || "Mechanical component").trim(),
+        diagnosis: String(payload?.diagnosis || "Manual inspection required.").trim(),
+        solutions: normalizeList(payload?.solutions, ["Inspect part condition"]),
+        tools: normalizeList(payload?.tools, ["Basic mechanic toolkit"]),
+        risk: normalizeRisk(payload?.risk),
+    };
+
+    return AnalysisSchema.parse(normalized);
+};
+
+export const callHF = async (model, data, options = {}) => {
+    const apiToken = process.env.HF_TOKEN;
+    const timeoutMs = options.timeoutMs ?? 15000;
+    const retries = options.retries ?? 2;
+    const fetchImpl = options.fetchImpl ?? fetch;
+
+    if (!apiToken) {
+        throw new Error("HF_TOKEN missing on server. Please set it in environment settings.");
+    }
+
+    let lastError;
+    for (let attempt = 0; attempt <= retries; attempt += 1) {
+        const controller = new AbortController();
+        const timeoutHandle = setTimeout(() => controller.abort(), timeoutMs);
+
+        try {
+            const response = await fetchImpl(`${HF_API_BASE}${model}`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiToken}`,
+                    "Content-Type": "application/json",
+                    "x-wait-for-model": "true",
+                },
+                body: JSON.stringify(data),
+                signal: controller.signal,
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                const retriable = RETRIABLE_STATUSES.has(response.status);
+                const message = `HF API Error (${model}) [${response.status}]: ${errorText}`;
+                if (!retriable || attempt === retries) {
+                    throw new Error(message);
+                }
+                lastError = new Error(message);
+                await sleep(300 * (attempt + 1));
+                continue;
+            }
+
+            return await response.json();
+        } catch (error) {
+            const isAbort = error?.name === "AbortError";
+            if (attempt === retries) {
+                throw new Error(isAbort ? `HF request timed out (${model})` : error.message);
+            }
+            lastError = error;
+            await sleep(300 * (attempt + 1));
+        } finally {
+            clearTimeout(timeoutHandle);
+        }
+    }
+
+    throw lastError || new Error(`HF request failed for model ${model}`);
+};
+
+export const classifyImage = async (imageSource, deps = {}) => {
+    if (!imageSource || typeof imageSource !== "string") {
+        throw new Error("No valid imageSource provided to classifier");
+    }
+
+    const callHFImpl = deps.callHFImpl || callHF;
+    const base64Data = imageSource.replace(/^data:image\/\w+;base64,/, "");
+    let description = "unidentified mechanical component";
+
     try {
-        console.log("Starting pure AI pipeline...");
-        
-        // 1. Prepare image data
-        if (!imageSource) throw new Error("No imageSource provided to classifier");
-        const base64Data = imageSource.replace(/^data:image\/\w+;base64,/, "");
-        console.log(`Image data prepared. Base64 length: ${base64Data.length}`);
+        const captionResult = await callHFImpl(CAPTION_MODEL, { inputs: base64Data }, { timeoutMs: 12000, retries: 1 });
+        description = String(captionResult?.[0]?.generated_text || description).trim();
+    } catch (error) {
+        console.warn("Caption model unavailable, using generic description:", error.message);
+    }
 
-        // STAGE 1: Image Captioning
-        console.log(`Stage 1: Calling ${CAPTION_MODEL}...`);
-        const captionResult = await callHF(CAPTION_MODEL, { inputs: base64Data });
-        const description = captionResult[0]?.generated_text || "unidentified mechanical part";
-        console.log("Stage 1 Success. Description:", description);
-
-        // STAGE 2: LLM Diagnosis
-        console.log(`Stage 2: Calling ${TEXT_MODEL}...`);
-        const prompt = `[INST] You are an expert automotive mechanic. Analyze this part description: "${description}". 
-Return a JSON object with exactly these keys: 
-"part" (the name of the part), 
-"diagnosis" (a short description of what might be wrong based on common issues for this part), 
-"solutions" (a list of 2-3 repair steps), 
-"tools" (a list of 2-3 required tools), 
-"risk" (one of "Low", "Medium", "High"). 
+    const prompt = `[INST] You are an expert automotive mechanic. Analyze this part description: "${description}".
+Return a JSON object with exactly these keys:
+"part" (string),
+"diagnosis" (string),
+"solutions" (array of 2-3 strings),
+"tools" (array of 2-3 strings),
+"risk" (one of "Low", "Medium", "High").
 Return ONLY valid JSON. [/INST]`;
 
-        const textResult = await callHF(TEXT_MODEL, { 
-            inputs: prompt,
-            parameters: { max_new_tokens: 250, return_full_text: false }
-        });
+    try {
+        const textResult = await callHFImpl(
+            TEXT_MODEL,
+            {
+                inputs: prompt,
+                parameters: { max_new_tokens: 180, return_full_text: false, temperature: 0.2 },
+            },
+            { timeoutMs: 14000, retries: 1 }
+        );
 
-        const generatedText = textResult[0]?.generated_text || "";
-        console.log("Stage 2 Raw Response:", generatedText);
-        
-        // Extract JSON from response (handling potential markdown formatting)
-        const jsonMatch = generatedText.match(/\{[\s\S]*\}/);
-        const output = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
+        const generatedText = String(textResult?.[0]?.generated_text || "");
+        const parsed = parseJsonFromModelText(generatedText);
+        const validated = validateAndNormalizeAnalysis(parsed);
 
-        if (!output) {
-            console.error("Stage 3 Failure: Could not extract JSON from textResult");
-            throw new Error("AI response was not in expected JSON format");
-        }
-
-        console.log("Pipeline Success. Final output:", output);
         return {
-            ...output,
-            confidence: 0.95,
-            originalLabel: `AI Reasoning based on: ${description}`
+            ...validated,
+            confidence: 0.9,
+            originalLabel: `AI Reasoning based on: ${description}`,
         };
-
     } catch (error) {
-        console.error("CRITICAL AI Pipeline Error:", error.message);
-        throw error; // Rethrow to let the router handle the 500 properly with log
+        console.warn("Diagnosis model unavailable or invalid output. Returning safe fallback:", error.message);
+        return buildFallbackAnalysis(description, error.message);
     }
 };

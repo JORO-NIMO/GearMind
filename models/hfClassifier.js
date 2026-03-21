@@ -1,7 +1,13 @@
 import { z } from "zod";
 
 const CAPTION_MODEL = "Salesforce/blip-image-captioning-large";
-const TEXT_MODEL = "mistralai/Mistral-7B-Instruct-v0.2";
+const TEXT_MODELS = (
+    process.env.HF_TEXT_MODELS
+    || "mistralai/Mistral-7B-Instruct-v0.2,mistralai/Mistral-7B-Instruct-v0.3,Qwen/Qwen2.5-7B-Instruct"
+)
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
 const HF_API_BASE = "https://router.huggingface.co/hf-inference/models/";
 
 const AnalysisSchema = z.object({
@@ -109,6 +115,14 @@ export const buildFallbackAnalysis = (description, reason = "unknown") => ({
     originalLabel: `Fallback (${reason}) based on: ${description || "unknown part"}`,
 });
 
+const mapFallbackReason = (errorMessage = "") => {
+    if (errorMessage.includes("[404]")) return "AI model unavailable";
+    if (errorMessage.includes("timed out")) return "AI timeout";
+    if (errorMessage.includes("No valid JSON")) return "AI format issue";
+    if (errorMessage.includes("HF_TOKEN")) return "AI auth configuration";
+    return "AI provider issue";
+};
+
 export const validateAndNormalizeAnalysis = (payload) => {
     const normalized = {
         part: String(payload?.part || "Mechanical component").trim(),
@@ -201,27 +215,41 @@ Return a JSON object with exactly these keys:
 "risk" (one of "Low", "Medium", "High").
 Return ONLY valid JSON. [/INST]`;
 
-    try {
-        const textResult = await callHFImpl(
-            TEXT_MODEL,
-            {
-                inputs: prompt,
-                parameters: { max_new_tokens: 180, return_full_text: false, temperature: 0.2 },
-            },
-            { timeoutMs: 14000, retries: 1 }
-        );
+    let lastError = null;
+    for (const model of TEXT_MODELS) {
+        try {
+            const textResult = await callHFImpl(
+                model,
+                {
+                    inputs: prompt,
+                    parameters: { max_new_tokens: 180, return_full_text: false, temperature: 0.2 },
+                },
+                { timeoutMs: 14000, retries: 1 }
+            );
 
-        const generatedText = String(textResult?.[0]?.generated_text || "");
-        const parsed = parseJsonFromModelText(generatedText);
-        const validated = validateAndNormalizeAnalysis(parsed);
+            const generatedText = String(textResult?.[0]?.generated_text || "");
+            const parsed = parseJsonFromModelText(generatedText);
+            const validated = validateAndNormalizeAnalysis(parsed);
 
-        return {
-            ...validated,
-            confidence: 0.9,
-            originalLabel: `AI Reasoning based on: ${description}`,
-        };
-    } catch (error) {
-        console.warn("Diagnosis model unavailable or invalid output. Returning safe fallback:", error.message);
-        return buildFallbackAnalysis(description, error.message);
+            return {
+                ...validated,
+                confidence: 0.9,
+                originalLabel: `AI Reasoning based on: ${description}`,
+            };
+        } catch (error) {
+            lastError = error;
+            console.warn(`Diagnosis model ${model} failed:`, error.message);
+
+            // 404 commonly means model endpoint unavailable in current provider; try next model.
+            if (String(error.message || "").includes("[404]")) {
+                continue;
+            }
+
+            // Parsing or non-404 failures can still be transient; keep trying any remaining models.
+        }
     }
+
+    const reason = mapFallbackReason(String(lastError?.message || ""));
+    console.warn("All diagnosis models failed. Returning safe fallback:", lastError?.message);
+    return buildFallbackAnalysis(description, reason);
 };

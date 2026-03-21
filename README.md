@@ -32,6 +32,8 @@ Create environment variables for backend runtime:
 
 - `HF_TOKEN` (required): Hugging Face API token for inference calls.
 - `FRONTEND_URLS` (optional): comma-separated CORS allowlist, for example `https://your-app.vercel.app,http://localhost:8080`.
+	Wildcards are supported, for example `https://*.placementbridge.org,https://*.vercel.app`.
+	If this variable is not set, backend allows all origins.
 - `API_KEY` (optional): if set, requests to `/analyze` and `/save-case` must include `x-api-key`.
 - `RATE_LIMIT_WINDOW_MS` (optional): rate-limiter window in milliseconds. Default `60000`.
 - `RATE_LIMIT_MAX_ANALYZE` (optional): max analyze requests per window per IP. Default `20`.

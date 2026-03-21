@@ -30,25 +30,44 @@ const SaveCaseSchema = z.object({
 
 const parseAllowedOrigins = () => {
   const raw = process.env.FRONTEND_URLS || process.env.FRONTEND_URL || '';
-  const values = raw
+  return raw
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean);
-
-  if (!values.length) {
-    values.push('http://localhost:8080', 'http://localhost:5173');
-  }
-
-  return new Set(values);
 };
 
-const allowedOrigins = parseAllowedOrigins();
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const wildcardToRegex = (pattern) => {
+  const escaped = pattern
+    .split('*')
+    .map((segment) => escapeRegex(segment))
+    .join('.*');
+  return new RegExp(`^${escaped}$`);
+};
+
+const allowedOriginMatchers = parseAllowedOrigins().map((pattern) => {
+  if (pattern === '*') return { type: 'any' };
+  if (pattern.includes('*')) return { type: 'wildcard', regex: wildcardToRegex(pattern) };
+  return { type: 'exact', value: pattern };
+});
+
+const isOriginAllowed = (origin) => {
+  if (!origin) return true;
+
+  // If no allowlist is configured, allow all origins to prevent accidental production lockout.
+  if (!allowedOriginMatchers.length) return true;
+
+  return allowedOriginMatchers.some((matcher) => {
+    if (matcher.type === 'any') return true;
+    if (matcher.type === 'exact') return matcher.value === origin;
+    return matcher.regex.test(origin);
+  });
+};
 
 const corsOptions = {
   origin(origin, callback) {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.has(origin)) return callback(null, true);
-    return callback(new Error('CORS origin denied'));
+    return callback(null, isOriginAllowed(origin));
   },
 };
 

@@ -1,14 +1,14 @@
 import { z } from "zod";
 
-const CAPTION_MODEL = "Salesforce/blip-image-captioning-large";
-const TEXT_MODELS = (
+export const CAPTION_MODEL = "Salesforce/blip-image-captioning-large";
+export const TEXT_MODELS = (
     process.env.HF_TEXT_MODELS
     || "mistralai/Mistral-7B-Instruct-v0.2,mistralai/Mistral-7B-Instruct-v0.3,Qwen/Qwen2.5-7B-Instruct"
 )
     .split(",")
     .map((value) => value.trim())
     .filter(Boolean);
-const HF_API_BASES = (
+export const HF_API_BASES = (
     process.env.HF_API_BASES
     || "https://router.huggingface.co/hf-inference/models/,https://api-inference.huggingface.co/models/"
 )

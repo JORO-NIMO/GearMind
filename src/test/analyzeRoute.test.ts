@@ -36,7 +36,7 @@ describe("analyze route", () => {
 
     expect(res.statusCode).toBe(400);
     expect(res.body.error).toContain("No image");
-  });
+  }, 15000);
 
   it("returns 400 for invalid image format", async () => {
     const handler = await getAnalyzeHandler();

@@ -36,20 +36,10 @@ Create environment variables for backend runtime:
 	Wildcards are supported, for example `https://*.placementbridge.org,https://*.vercel.app`.
 	If this variable is not set, backend allows all origins.
 - `API_KEY` (optional): if set, requests to `/analyze` and `/save-case` must include `x-api-key`.
-- `ENABLE_DEBUG_ENDPOINTS` (optional): set to `true` to enable temporary debug endpoints.
-- `DEBUG_API_KEY` (optional but recommended in production): required as `x-debug-key` for debug endpoints.
 - `RATE_LIMIT_WINDOW_MS` (optional): rate-limiter window in milliseconds. Default `60000`.
 - `RATE_LIMIT_MAX_ANALYZE` (optional): max analyze requests per window per IP. Default `20`.
 - `RATE_LIMIT_MAX_SAVE_CASE` (optional): max save requests per window per IP. Default `30`.
 - `CASE_STORAGE_FILE` (optional): NDJSON file path for saved cases. Default `tmp/cases.ndjson`.
-
-### Debug Endpoint (temporary)
-
-When `ENABLE_DEBUG_ENDPOINTS=true`, backend exposes `GET /debug/hf`.
-
-- Purpose: verify Hugging Face token/model/base reachability without exposing secrets.
-- In production, set `DEBUG_API_KEY` and send it as header `x-debug-key`.
-- Response includes per-model attempts and HTTP status per configured HF base URL.
 
 ## 🧠 Features
 - **Two-Stage AI Pipeline**: Image captioning + LLM diagnosis with structured output.

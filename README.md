@@ -31,7 +31,9 @@ npm run dev
 Create environment variables for backend runtime:
 
 - `HF_TOKEN` (required): Hugging Face API token for inference calls.
-- `HF_API_BASES` (optional): comma-separated inference base URLs tried in order. Default is `https://router.huggingface.co/hf-inference/models/,https://api-inference.huggingface.co/models/`.
+- `HF_API_BASES` (optional): comma-separated inference base URLs tried in order. Default is `https://router.huggingface.co/hf-inference/models/`.
+- `HF_CAPTION_MODELS` (optional): comma-separated image captioning model IDs tried in order.
+	Default is `Salesforce/blip-image-captioning-base,nlpconnect/vit-gpt2-image-captioning`.
 - `FRONTEND_URLS` (optional): comma-separated CORS allowlist, for example `https://your-app.vercel.app,http://localhost:8080`.
 	Wildcards are supported, for example `https://*.placementbridge.org,https://*.vercel.app`.
 	If this variable is not set, backend allows all origins.

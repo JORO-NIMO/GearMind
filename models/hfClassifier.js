@@ -1,6 +1,52 @@
 import { z } from "zod";
 
-export const CAPTION_MODEL = "Salesforce/blip-image-captioning-large";
+const BLOCKED_CAPTION_MODELS = new Set([
+    "Salesforce/blip-image-captioning-large",
+]);
+
+const parseCaptionModels = (raw) => {
+    const models = String(raw || "")
+        .split(",")
+        .map((value) => value.trim())
+        .filter(Boolean)
+        .filter((model) => !BLOCKED_CAPTION_MODELS.has(model));
+
+    return [...new Set(models)];
+};
+
+export const CAPTION_MODELS = (() => {
+    const configured = parseCaptionModels(process.env.HF_CAPTION_MODELS);
+    if (configured.length) return configured;
+
+    return [
+        "Salesforce/blip-image-captioning-base",
+        "nlpconnect/vit-gpt2-image-captioning",
+    ];
+})();
+const HF_ROUTER_BASE = "https://router.huggingface.co/hf-inference/models/";
+const HF_LEGACY_BASE = "https://api-inference.huggingface.co/models/";
+
+const normalizeHfBase = (baseUrl) => {
+    const trimmed = String(baseUrl || "").trim();
+    if (!trimmed) return "";
+
+    if (trimmed.startsWith(HF_LEGACY_BASE)) {
+        return HF_ROUTER_BASE;
+    }
+
+    return trimmed;
+};
+
+const parseHfBases = (raw) => {
+    const normalized = String(raw || "")
+        .split(",")
+        .map((value) => normalizeHfBase(value))
+        .filter(Boolean);
+
+    const deduped = [...new Set(normalized)];
+    return deduped.length ? deduped : [HF_ROUTER_BASE];
+};
+
 export const TEXT_MODELS = (
     process.env.HF_TEXT_MODELS
     || "mistralai/Mistral-7B-Instruct-v0.2,mistralai/Mistral-7B-Instruct-v0.3,Qwen/Qwen2.5-7B-Instruct"
@@ -8,13 +54,7 @@ export const TEXT_MODELS = (
     .split(",")
     .map((value) => value.trim())
     .filter(Boolean);
-export const HF_API_BASES = (
-    process.env.HF_API_BASES
-    || "https://router.huggingface.co/hf-inference/models/,https://api-inference.huggingface.co/models/"
-)
-    .split(",")
-    .map((value) => value.trim())
-    .filter(Boolean);
+export const HF_API_BASES = parseHfBases(process.env.HF_API_BASES || HF_ROUTER_BASE);
 
 const AnalysisSchema = z.object({
     part: z.string().min(1),
@@ -134,8 +174,8 @@ export const callHF = async (model, data, options = {}) => {
                     const retriable = RETRIABLE_STATUSES.has(response.status);
                     const message = `HF API Error (${model}) [${response.status}] via ${baseUrl}: ${errorText}`;
 
-                    // 404 is frequently endpoint/model availability mismatch; move to next base URL.
-                    if (response.status === 404) {
+                    // 404 commonly means endpoint/model mismatch. 410 indicates deprecated endpoint.
+                    if (response.status === 404 || response.status === 410) {
                         lastError = new Error(message);
                         break;
                     }
@@ -182,10 +222,27 @@ export const classifyImage = async (imageSource, deps = {}) => {
     }
     const base64Data = imageSource.replace(dataUrlPrefix, "");
 
-    const captionResult = await callHFImpl(CAPTION_MODEL, { inputs: base64Data }, { timeoutMs: 12000, retries: 1 });
-    const description = String(captionResult?.[0]?.generated_text || "").trim();
+    let description = "";
+    let captionError = null;
+    for (const model of CAPTION_MODELS) {
+        try {
+            const captionResult = await callHFImpl(model, { inputs: base64Data }, { timeoutMs: 12000, retries: 1 });
+            description = String(captionResult?.[0]?.generated_text || "").trim();
+            if (!description) {
+                throw new Error(`Caption model ${model} returned empty description`);
+            }
+            break;
+        } catch (error) {
+            captionError = error;
+            console.warn(`Caption model ${model} failed:`, error.message);
+        }
+    }
+
     if (!description) {
-        throw createInferenceError("Caption model returned empty description", 502);
+        throw createInferenceError(
+            `All caption models failed. Last error: ${String(captionError?.message || "Unknown caption error")}`,
+            502
+        );
     }
 
     const prompt = `[INST] You are an expert automotive mechanic. Analyze this part description: "${description}".

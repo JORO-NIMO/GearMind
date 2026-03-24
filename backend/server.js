@@ -7,7 +7,6 @@ import fs from 'fs/promises';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { z } from 'zod';
-import { CAPTION_MODEL, HF_API_BASES, TEXT_MODELS } from '../models/hfClassifier.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -117,67 +116,6 @@ const optionalApiKeyAuth = (req, res, next) => {
   return res.status(401).json({ error: 'Unauthorized', message: 'Missing or invalid API key' });
 };
 
-const requireDebugAccess = (req, res, next) => {
-  const debugEnabled = process.env.ENABLE_DEBUG_ENDPOINTS === 'true';
-  if (!debugEnabled) {
-    return res.status(404).json({ error: 'Not found' });
-  }
-
-  const debugKey = process.env.DEBUG_API_KEY;
-  if (!debugKey) {
-    if (process.env.NODE_ENV === 'production') {
-      return res.status(403).json({
-        error: 'Debug endpoint requires DEBUG_API_KEY in production',
-      });
-    }
-    return next();
-  }
-
-  const provided = req.headers['x-debug-key'];
-  if (provided === debugKey) return next();
-
-  return res.status(401).json({ error: 'Unauthorized', message: 'Missing or invalid debug key' });
-};
-
-const truncate = (value, maxLength = 180) => {
-  const text = String(value || '');
-  return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
-};
-
-const probeModelAcrossBases = async ({ model, payload, apiToken }) => {
-  const attempts = [];
-
-  for (const base of HF_API_BASES) {
-    try {
-      const response = await fetch(`${base}${model}`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${apiToken}`,
-          'Content-Type': 'application/json',
-          'x-wait-for-model': 'true',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (response.ok) {
-        attempts.push({ base, status: response.status, ok: true });
-        return { ok: true, selectedBase: base, attempts };
-      }
-
-      const body = await response.text();
-      attempts.push({
-        base,
-        status: response.status,
-        ok: false,
-        error: truncate(body),
-      });
-    } catch (error) {
-      attempts.push({ base, status: 0, ok: false, error: truncate(error.message) });
-    }
-  }
-
-  return { ok: false, attempts };
-};
 
 let caseWriteQueue = Promise.resolve();
 const enqueueCaseWrite = (record) => {
@@ -227,48 +165,6 @@ app.post('/save-case', saveCaseRateLimiter, optionalApiKeyAuth, async (req, res)
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
-});
-
-app.get('/debug/hf', requireDebugAccess, async (req, res) => {
-  const apiToken = process.env.HF_TOKEN;
-  if (!apiToken) {
-    return res.status(500).json({
-      status: 'error',
-      tokenConfigured: false,
-      message: 'HF_TOKEN is missing',
-    });
-  }
-
-  const tinyTestImage = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
-  const checks = [];
-
-  const captionCheck = await probeModelAcrossBases({
-    model: CAPTION_MODEL,
-    payload: { inputs: tinyTestImage },
-    apiToken,
-  });
-  checks.push({ model: CAPTION_MODEL, type: 'caption', ...captionCheck });
-
-  for (const model of TEXT_MODELS) {
-    const textCheck = await probeModelAcrossBases({
-      model,
-      payload: {
-        inputs: '[INST] Return ONLY JSON: {"ok":true}. [/INST]',
-        parameters: { max_new_tokens: 40, return_full_text: false, temperature: 0 },
-      },
-      apiToken,
-    });
-    checks.push({ model, type: 'diagnosis', ...textCheck });
-  }
-
-  const allOk = checks.every((item) => item.ok);
-  return res.status(allOk ? 200 : 503).json({
-    status: allOk ? 'ok' : 'degraded',
-    tokenConfigured: true,
-    configuredBases: HF_API_BASES,
-    checks,
-    checkedAt: new Date().toISOString(),
-  });
 });
 
 // Start the server (using a more ESM-friendly check)

@@ -32,27 +32,16 @@ export const analyzeImage = async (image: string): Promise<AnalysisResponse> => 
  * Saves a diagnostic case.
  */
 export const saveCase = async (data: any) => {
-  try {
-    // Attempt to save to backend
-    const response = await fetch(`${API_BASE_URL}/save-case`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ data }),
-    });
+  const response = await fetch(`${API_BASE_URL}/save-case`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ data }),
+  });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || 'Backend failed');
-    }
-    return await response.json();
-  } catch (error) {
-    console.warn("Backend unavailable, saving to local storage:", error);
-    
-    // Fallback to local storage
-    const cases = JSON.parse(localStorage.getItem('saved_cases') || '[]');
-    cases.push({ ...data, savedAt: new Date().toISOString() });
-    localStorage.setItem('saved_cases', JSON.stringify(cases));
-    
-    return { success: true, message: "Saved to local storage" };
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Backend failed');
   }
+
+  return await response.json();
 };

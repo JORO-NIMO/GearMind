@@ -36,26 +36,16 @@ Create environment variables for backend runtime:
 	Wildcards are supported, for example `https://*.placementbridge.org,https://*.vercel.app`.
 	If this variable is not set, backend allows all origins.
 - `API_KEY` (optional): if set, requests to `/analyze` and `/save-case` must include `x-api-key`.
-- `ENABLE_DEBUG_ENDPOINTS` (optional): set to `true` to enable temporary debug endpoints.
-- `DEBUG_API_KEY` (optional but recommended in production): required as `x-debug-key` for debug endpoints.
 - `RATE_LIMIT_WINDOW_MS` (optional): rate-limiter window in milliseconds. Default `60000`.
 - `RATE_LIMIT_MAX_ANALYZE` (optional): max analyze requests per window per IP. Default `20`.
 - `RATE_LIMIT_MAX_SAVE_CASE` (optional): max save requests per window per IP. Default `30`.
 - `CASE_STORAGE_FILE` (optional): NDJSON file path for saved cases. Default `tmp/cases.ndjson`.
 
-### Debug Endpoint (temporary)
-
-When `ENABLE_DEBUG_ENDPOINTS=true`, backend exposes `GET /debug/hf`.
-
-- Purpose: verify Hugging Face token/model/base reachability without exposing secrets.
-- In production, set `DEBUG_API_KEY` and send it as header `x-debug-key`.
-- Response includes per-model attempts and HTTP status per configured HF base URL.
-
 ## 🧠 Features
 - **Two-Stage AI Pipeline**: Image captioning + LLM diagnosis with structured output.
 - **Validated AI Output**: Server-side schema validation guarantees response shape.
 - **Resilient Inference Calls**: Timeout + retry logic for external model requests.
-- **Safe Fallback Response**: Returns a normalized fallback diagnosis when AI output is invalid.
+- **Strict AI Responses**: Returns explicit errors when inference output is invalid instead of mock fallback content.
 - **Rate-Limited Endpoints**: Protects `/analyze` and `/save-case` from abuse.
 - **Persistent Case Storage**: Saves cases as append-only NDJSON on the backend.
 
@@ -63,7 +53,7 @@ When `ENABLE_DEBUG_ENDPOINTS=true`, backend exposes `GET /debug/hf`.
 - `/api`: Vercel serverless entrypoint.
 - `/backend`: Express server and API routes.
 - `/models`: AI inference + validation pipeline.
-- `/src`: React frontend screens, components, and tests.
+- `/src`: React frontend screens and components.
 - `/tmp`: local case storage output (`cases.ndjson`).
 
 ## 🚀 Deployment (Vercel)

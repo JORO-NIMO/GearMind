@@ -22,29 +22,13 @@ const AnalysisSchema = z.object({
     solutions: z.array(z.string().min(1)).min(1).max(5),
     tools: z.array(z.string().min(1)).min(1).max(5),
     risk: z.enum(["Low", "Medium", "High", "Unknown"]),
+    confidence: z.number().min(0).max(1),
+    originalLabel: z.string().optional(),
 });
 
 const RETRIABLE_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504]);
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const normalizeRisk = (risk) => {
-    if (!risk) return "Unknown";
-    const value = String(risk).trim().toLowerCase();
-    if (value === "low") return "Low";
-    if (value === "medium") return "Medium";
-    if (value === "high") return "High";
-    return "Unknown";
-};
-
-const normalizeList = (value, fallback) => {
-    if (!Array.isArray(value)) return fallback;
-    const compact = value
-        .map((item) => String(item || "").trim())
-        .filter(Boolean)
-        .slice(0, 5);
-    return compact.length ? compact : fallback;
-};
 
 const extractBalancedJsonObjects = (text) => {
     const candidates = [];
@@ -107,38 +91,14 @@ export const parseJsonFromModelText = (text) => {
     throw new Error("No valid JSON object found in model response");
 };
 
-export const buildFallbackAnalysis = (description, reason = "unknown") => ({
-    part: description || "Mechanical component",
-    diagnosis: "AI analysis was partially unavailable. Perform a manual inspection before repair.",
-    solutions: [
-        "Inspect visible wear, leaks, and mounting points",
-        "Check service manual specs for this component",
-        "Run a targeted functional test before replacement",
-    ],
-    tools: ["Flashlight", "Multimeter", "Service manual"],
-    risk: "Unknown",
-    confidence: 0.35,
-    originalLabel: `Fallback (${reason}) based on: ${description || "unknown part"}`,
-});
-
-const mapFallbackReason = (errorMessage = "") => {
-    if (errorMessage.includes("[404]")) return "AI model unavailable";
-    if (errorMessage.includes("timed out")) return "AI timeout";
-    if (errorMessage.includes("No valid JSON")) return "AI format issue";
-    if (errorMessage.includes("HF_TOKEN")) return "AI auth configuration";
-    return "AI provider issue";
+export const validateAndNormalizeAnalysis = (payload) => {
+    return AnalysisSchema.parse(payload);
 };
 
-export const validateAndNormalizeAnalysis = (payload) => {
-    const normalized = {
-        part: String(payload?.part || "Mechanical component").trim(),
-        diagnosis: String(payload?.diagnosis || "Manual inspection required.").trim(),
-        solutions: normalizeList(payload?.solutions, ["Inspect part condition"]),
-        tools: normalizeList(payload?.tools, ["Basic mechanic toolkit"]),
-        risk: normalizeRisk(payload?.risk),
-    };
-
-    return AnalysisSchema.parse(normalized);
+const createInferenceError = (message, statusCode = 502) => {
+    const error = new Error(message);
+    error.statusCode = statusCode;
+    return error;
 };
 
 export const callHF = async (model, data, options = {}) => {
@@ -212,18 +172,20 @@ export const callHF = async (model, data, options = {}) => {
 
 export const classifyImage = async (imageSource, deps = {}) => {
     if (!imageSource || typeof imageSource !== "string") {
-        throw new Error("No valid imageSource provided to classifier");
+        throw createInferenceError("No valid imageSource provided to classifier", 400);
     }
 
     const callHFImpl = deps.callHFImpl || callHF;
-    const base64Data = imageSource.replace(/^data:image\/\w+;base64,/, "");
-    let description = "unidentified mechanical component";
+    const dataUrlPrefix = /^data:image\/[a-zA-Z0-9.+-]+;base64,/;
+    if (!dataUrlPrefix.test(imageSource)) {
+        throw createInferenceError("Invalid image source format. Expected base64 data URL", 400);
+    }
+    const base64Data = imageSource.replace(dataUrlPrefix, "");
 
-    try {
-        const captionResult = await callHFImpl(CAPTION_MODEL, { inputs: base64Data }, { timeoutMs: 12000, retries: 1 });
-        description = String(captionResult?.[0]?.generated_text || description).trim();
-    } catch (error) {
-        console.warn("Caption model unavailable, using generic description:", error.message);
+    const captionResult = await callHFImpl(CAPTION_MODEL, { inputs: base64Data }, { timeoutMs: 12000, retries: 1 });
+    const description = String(captionResult?.[0]?.generated_text || "").trim();
+    if (!description) {
+        throw createInferenceError("Caption model returned empty description", 502);
     }
 
     const prompt = `[INST] You are an expert automotive mechanic. Analyze this part description: "${description}".
@@ -232,7 +194,8 @@ Return a JSON object with exactly these keys:
 "diagnosis" (string),
 "solutions" (array of 2-3 strings),
 "tools" (array of 2-3 strings),
-"risk" (one of "Low", "Medium", "High").
+"risk" (one of "Low", "Medium", "High", "Unknown"),
+"confidence" (number between 0 and 1).
 Return ONLY valid JSON. [/INST]`;
 
     let lastError = null;
@@ -249,13 +212,7 @@ Return ONLY valid JSON. [/INST]`;
 
             const generatedText = String(textResult?.[0]?.generated_text || "");
             const parsed = parseJsonFromModelText(generatedText);
-            const validated = validateAndNormalizeAnalysis(parsed);
-
-            return {
-                ...validated,
-                confidence: 0.9,
-                originalLabel: `AI Reasoning based on: ${description}`,
-            };
+            return validateAndNormalizeAnalysis(parsed);
         } catch (error) {
             lastError = error;
             console.warn(`Diagnosis model ${model} failed:`, error.message);
@@ -269,7 +226,8 @@ Return ONLY valid JSON. [/INST]`;
         }
     }
 
-    const reason = mapFallbackReason(String(lastError?.message || ""));
-    console.warn("All diagnosis models failed. Returning safe fallback:", lastError?.message);
-    return buildFallbackAnalysis(description, reason);
+    throw createInferenceError(
+        `All diagnosis models failed. Last error: ${String(lastError?.message || "Unknown diagnosis error")}`,
+        502
+    );
 };

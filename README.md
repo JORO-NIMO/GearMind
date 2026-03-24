@@ -45,7 +45,7 @@ Create environment variables for backend runtime:
 - **Two-Stage AI Pipeline**: Image captioning + LLM diagnosis with structured output.
 - **Validated AI Output**: Server-side schema validation guarantees response shape.
 - **Resilient Inference Calls**: Timeout + retry logic for external model requests.
-- **Safe Fallback Response**: Returns a normalized fallback diagnosis when AI output is invalid.
+- **Strict AI Responses**: Returns explicit errors when inference output is invalid instead of mock fallback content.
 - **Rate-Limited Endpoints**: Protects `/analyze` and `/save-case` from abuse.
 - **Persistent Case Storage**: Saves cases as append-only NDJSON on the backend.
 
@@ -53,7 +53,7 @@ Create environment variables for backend runtime:
 - `/api`: Vercel serverless entrypoint.
 - `/backend`: Express server and API routes.
 - `/models`: AI inference + validation pipeline.
-- `/src`: React frontend screens, components, and tests.
+- `/src`: React frontend screens and components.
 - `/tmp`: local case storage output (`cases.ndjson`).
 
 ## 🚀 Deployment (Vercel)

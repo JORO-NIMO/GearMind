@@ -3,17 +3,15 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import analyzeRoute from './routes/analyze.js';
 import path from 'path';
-import fs from 'fs/promises';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { z } from 'zod';
+import { createCaseStore } from './caseStore.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const app = express();
 const PORT = process.env.PORT || 3001;
-const CASE_STORAGE_FILE = process.env.CASE_STORAGE_FILE || path.resolve(__dirname, '../tmp/cases.ndjson');
 
 const SaveCaseSchema = z.object({
   diagnosis: z.object({
@@ -28,8 +26,13 @@ const SaveCaseSchema = z.object({
   image: z.string().min(1),
 });
 
-const parseAllowedOrigins = () => {
-  const raw = process.env.FRONTEND_URLS || process.env.FRONTEND_URL || '';
+const CaseRecordSchema = SaveCaseSchema.extend({
+  id: z.string().min(1),
+  savedAt: z.string().datetime().or(z.string().min(1)),
+});
+
+const parseAllowedOrigins = (rawValue) => {
+  const raw = rawValue || process.env.FRONTEND_URLS || process.env.FRONTEND_URL || '';
   return raw
     .split(',')
     .map((origin) => origin.trim())
@@ -46,29 +49,31 @@ const wildcardToRegex = (pattern) => {
   return new RegExp(`^${escaped}$`);
 };
 
-const allowedOriginMatchers = parseAllowedOrigins().map((pattern) => {
-  if (pattern === '*') return { type: 'any' };
-  if (pattern.includes('*')) return { type: 'wildcard', regex: wildcardToRegex(pattern) };
-  return { type: 'exact', value: pattern };
-});
-
-const isOriginAllowed = (origin) => {
-  if (!origin) return true;
-
-  // If no allowlist is configured, allow all origins to prevent accidental production lockout.
-  if (!allowedOriginMatchers.length) return true;
-
-  return allowedOriginMatchers.some((matcher) => {
-    if (matcher.type === 'any') return true;
-    if (matcher.type === 'exact') return matcher.value === origin;
-    return matcher.regex.test(origin);
+const createCorsOptions = (patterns) => {
+  const allowedOriginMatchers = parseAllowedOrigins(patterns).map((pattern) => {
+    if (pattern === '*') return { type: 'any' };
+    if (pattern.includes('*')) return { type: 'wildcard', regex: wildcardToRegex(pattern) };
+    return { type: 'exact', value: pattern };
   });
-};
 
-const corsOptions = {
-  origin(origin, callback) {
-    return callback(null, isOriginAllowed(origin));
-  },
+  const isOriginAllowed = (origin) => {
+    if (!origin) return true;
+
+    // If no allowlist is configured, allow all origins to prevent accidental production lockout.
+    if (!allowedOriginMatchers.length) return true;
+
+    return allowedOriginMatchers.some((matcher) => {
+      if (matcher.type === 'any') return true;
+      if (matcher.type === 'exact') return matcher.value === origin;
+      return matcher.regex.test(origin);
+    });
+  };
+
+  return {
+    origin(origin, callback) {
+      return callback(null, isOriginAllowed(origin));
+    },
+  };
 };
 
 const getClientIp = (req) => {
@@ -106,8 +111,7 @@ const createRateLimiter = ({ windowMs, maxRequests }) => {
   };
 };
 
-const optionalApiKeyAuth = (req, res, next) => {
-  const requiredApiKey = process.env.API_KEY;
+const createOptionalApiKeyAuth = (requiredApiKey) => (req, res, next) => {
   if (!requiredApiKey) return next();
 
   const provided = req.headers['x-api-key'];
@@ -116,56 +120,95 @@ const optionalApiKeyAuth = (req, res, next) => {
   return res.status(401).json({ error: 'Unauthorized', message: 'Missing or invalid API key' });
 };
 
-
-let caseWriteQueue = Promise.resolve();
-const enqueueCaseWrite = (record) => {
-  caseWriteQueue = caseWriteQueue.then(async () => {
-    await fs.mkdir(path.dirname(CASE_STORAGE_FILE), { recursive: true });
-    await fs.appendFile(CASE_STORAGE_FILE, `${JSON.stringify(record)}\n`, 'utf8');
-  });
-  return caseWriteQueue;
+const parsePositiveInt = (value, fallback, max) => {
+  const parsed = Number.parseInt(String(value ?? ''), 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  return Math.min(parsed, max);
 };
 
-// Middleware
-app.use(cors(corsOptions));
-app.use(bodyParser.json({ limit: '50mb' })); // Increase limit for base64 images
+export const createApp = (options = {}) => {
+  const app = express();
+  const caseStorageFile = options.caseStorageFile || process.env.CASE_STORAGE_FILE || path.resolve(__dirname, '../tmp/cases.ndjson');
+  const corsOptions = createCorsOptions(options.frontendUrls);
+  const optionalApiKeyAuth = createOptionalApiKeyAuth(options.apiKey ?? process.env.API_KEY);
+  const caseStore = options.caseStore || createCaseStore({
+    caseStorageFile,
+    driver: options.caseStorageDriver,
+    fetchImpl: options.fetchImpl,
+    parseRecord: (value) => CaseRecordSchema.parse(value),
+    storagePrefix: options.caseStoragePrefix,
+  });
 
-// Routes
-const analyzeRateLimiter = createRateLimiter({
-  windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS || 60_000),
-  maxRequests: Number(process.env.RATE_LIMIT_MAX_ANALYZE || 20),
-});
+  // Middleware
+  app.use(cors(corsOptions));
+  app.use(bodyParser.json({ limit: '50mb' })); // Increase limit for base64 images
 
-const saveCaseRateLimiter = createRateLimiter({
-  windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS || 60_000),
-  maxRequests: Number(process.env.RATE_LIMIT_MAX_SAVE_CASE || 30),
-});
+  // Routes
+  const analyzeRateLimiter = createRateLimiter({
+    windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS || 60_000),
+    maxRequests: Number(process.env.RATE_LIMIT_MAX_ANALYZE || 20),
+  });
 
-app.use('/analyze', analyzeRateLimiter, optionalApiKeyAuth, analyzeRoute);
+  const saveCaseRateLimiter = createRateLimiter({
+    windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS || 60_000),
+    maxRequests: Number(process.env.RATE_LIMIT_MAX_SAVE_CASE || 30),
+  });
 
-app.post('/save-case', saveCaseRateLimiter, optionalApiKeyAuth, async (req, res) => {
-  try {
-    const payload = SaveCaseSchema.parse(req.body?.data);
-    const record = {
-      id: crypto.randomUUID(),
-      savedAt: new Date().toISOString(),
-      diagnosis: payload.diagnosis,
-      image: payload.image,
-    };
+  app.use('/analyze', analyzeRateLimiter, optionalApiKeyAuth, analyzeRoute);
 
-    await enqueueCaseWrite(record);
-    return res.json({ success: true, message: 'Case saved', id: record.id, savedAt: record.savedAt });
-  } catch (error) {
-    if (error?.name === 'ZodError') {
-      return res.status(400).json({ error: 'Invalid case payload', message: error.message });
+  app.post('/save-case', saveCaseRateLimiter, optionalApiKeyAuth, async (req, res) => {
+    try {
+      const payload = SaveCaseSchema.parse(req.body?.data);
+      const record = {
+        id: crypto.randomUUID(),
+        savedAt: new Date().toISOString(),
+        diagnosis: payload.diagnosis,
+        image: payload.image,
+      };
+
+      await caseStore.saveCase(record);
+      return res.json({ success: true, message: 'Case saved', case: record });
+    } catch (error) {
+      if (error?.name === 'ZodError') {
+        return res.status(400).json({ error: 'Invalid case payload', message: error.message });
+      }
+      return res.status(500).json({ error: 'Failed to save case', message: error.message });
     }
-    return res.status(500).json({ error: 'Failed to save case', message: error.message });
-  }
-});
+  });
 
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok' });
-});
+  app.get('/cases', optionalApiKeyAuth, async (req, res) => {
+    try {
+      const limit = parsePositiveInt(req.query.limit, 50, 200);
+      const result = await caseStore.listCases(limit);
+      return res.json(result);
+    } catch (error) {
+      return res.status(500).json({ error: 'Failed to load saved cases', message: error.message });
+    }
+  });
+
+  app.get('/cases/:id', optionalApiKeyAuth, async (req, res) => {
+    try {
+      const record = await caseStore.getCase(req.params.id);
+
+      if (!record) {
+        return res.status(404).json({ error: 'Case not found', message: 'No saved case matches that id' });
+      }
+
+      return res.json({ case: record });
+    } catch (error) {
+      return res.status(500).json({ error: 'Failed to load saved case', message: error.message });
+    }
+  });
+
+  app.get('/health', async (req, res) => {
+    const savedCases = await caseStore.countCases().catch(() => 0);
+    res.json({ status: 'ok', savedCases, storage: caseStore.kind });
+  });
+
+  return app;
+};
+
+const app = createApp();
 
 // Start the server (using a more ESM-friendly check)
 const isMain = import.meta.url.startsWith('file:');

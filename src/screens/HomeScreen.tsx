@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Camera, Cpu, Wrench, ChevronRight } from "lucide-react";
+import { Camera, Cpu, Wrench, ChevronRight, FolderOpen } from "lucide-react";
 
 const HomeScreen = () => {
   const navigate = useNavigate();
@@ -83,18 +83,32 @@ const HomeScreen = () => {
       </motion.p>
 
       {/* CTA */}
-      <motion.button
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.3 }}
-        whileTap={{ scale: 0.97 }}
-        onClick={() => navigate("/camera")}
-        className="w-full h-16 rounded-xl bg-primary text-primary-foreground font-display font-semibold text-lg flex items-center justify-center gap-3 shadow-lg active:shadow-md transition-shadow"
-      >
-        <Camera className="w-6 h-6" />
-        Scan Problem
-        <ChevronRight className="w-5 h-5 opacity-60" />
-      </motion.button>
+      <div className="flex flex-col gap-3">
+        <motion.button
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.3 }}
+          whileTap={{ scale: 0.97 }}
+          onClick={() => navigate("/camera")}
+          className="w-full h-16 rounded-xl bg-primary text-primary-foreground font-display font-semibold text-lg flex items-center justify-center gap-3 shadow-lg active:shadow-md transition-shadow"
+        >
+          <Camera className="w-6 h-6" />
+          Scan Problem
+          <ChevronRight className="w-5 h-5 opacity-60" />
+        </motion.button>
+
+        <motion.button
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.36 }}
+          whileTap={{ scale: 0.97 }}
+          onClick={() => navigate("/cases")}
+          className="w-full h-14 rounded-xl border border-border bg-card text-foreground font-display font-semibold text-base flex items-center justify-center gap-3"
+        >
+          <FolderOpen className="w-5 h-5 text-primary" />
+          View Saved Cases
+        </motion.button>
+      </div>
     </div>
   );
 };

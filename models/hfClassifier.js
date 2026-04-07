@@ -248,6 +248,7 @@ export const classifyImage = async (imageSource, deps = {}) => {
     const prompt = `[INST] You are an expert automotive mechanic. Analyze this part description: "${description}".
 Return a JSON object with exactly these keys:
 "part" (string),
+"originalLabel" (string, a short name for the visible component or issue),
 "diagnosis" (string),
 "solutions" (array of 2-3 strings),
 "tools" (array of 2-3 strings),
@@ -269,7 +270,11 @@ Return ONLY valid JSON. [/INST]`;
 
             const generatedText = String(textResult?.[0]?.generated_text || "");
             const parsed = parseJsonFromModelText(generatedText);
-            return validateAndNormalizeAnalysis(parsed);
+            const validated = validateAndNormalizeAnalysis(parsed);
+            return {
+                ...validated,
+                originalLabel: String(validated.originalLabel || description).trim(),
+            };
         } catch (error) {
             lastError = error;
             console.warn(`Diagnosis model ${model} failed:`, error.message);

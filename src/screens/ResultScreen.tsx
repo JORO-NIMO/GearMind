@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Cpu,
@@ -24,11 +25,22 @@ const riskConfig = {
 const ResultScreen = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const image = (location.state as { image?: string })?.image;
   const [diagnosis, setDiagnosis] = useState<AnalysisResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
+
+  const saveCaseMutation = useMutation({
+    mutationFn: saveCase,
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["cases"] });
+      toast.success(result.message || "Case saved successfully");
+    },
+    onError: () => {
+      toast.error("Failed to save case");
+    },
+  });
 
   const runAnalysis = async () => {
     if (!image) return;
@@ -56,14 +68,10 @@ const ResultScreen = () => {
 
   const handleSaveCase = async () => {
     if (!diagnosis || !image) return;
-    setSaving(true);
     try {
-      const result = await saveCase({ diagnosis, image });
-      toast.success(result.message || "Case saved successfully");
-    } catch (error) {
-      toast.error("Failed to save case");
-    } finally {
-      setSaving(false);
+      await saveCaseMutation.mutateAsync({ diagnosis, image });
+    } catch {
+      // Error toast is handled by the mutation config.
     }
   };
 
@@ -188,10 +196,10 @@ const ResultScreen = () => {
               </div>
               <button
                 onClick={handleSaveCase}
-                disabled={saving}
+                disabled={saveCaseMutation.isPending}
                 className="flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors disabled:opacity-50"
               >
-                {saving ? (
+                {saveCaseMutation.isPending ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <Save className="w-4 h-4" />
@@ -259,14 +267,22 @@ const ResultScreen = () => {
             </div>
 
             {/* CTA */}
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              onClick={() => navigate("/")}
-              className="w-full h-14 rounded-xl bg-primary text-primary-foreground font-display font-semibold text-base flex items-center justify-center gap-2 shadow-lg"
-            >
-              <Camera className="w-5 h-5" />
-              Scan Another Problem
-            </motion.button>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => navigate("/cases")}
+                className="w-full h-14 rounded-xl border border-border bg-card text-foreground font-display font-semibold text-base"
+              >
+                View Saved Cases
+              </button>
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={() => navigate("/")}
+                className="w-full h-14 rounded-xl bg-primary text-primary-foreground font-display font-semibold text-base flex items-center justify-center gap-2 shadow-lg"
+              >
+                <Camera className="w-5 h-5" />
+                Scan Another Problem
+              </motion.button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

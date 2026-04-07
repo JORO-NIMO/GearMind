@@ -42,6 +42,15 @@ Create environment variables for backend runtime:
 - `RATE_LIMIT_MAX_ANALYZE` (optional): max analyze requests per window per IP. Default `20`.
 - `RATE_LIMIT_MAX_SAVE_CASE` (optional): max save requests per window per IP. Default `30`.
 - `CASE_STORAGE_FILE` (optional): NDJSON file path for saved cases. Default `tmp/cases.ndjson`.
+- `CASE_STORAGE_DRIVER` (optional): `auto`, `file`, or `upstash`. Default `auto`.
+- `CASE_STORAGE_PREFIX` (optional): key prefix when using Upstash REST storage. Default `gearmind:cases`.
+- `UPSTASH_REDIS_REST_URL` or `KV_REST_API_URL` (optional): durable REST storage URL for saved cases.
+- `UPSTASH_REDIS_REST_TOKEN` or `KV_REST_API_TOKEN` (optional): token for the REST storage endpoint.
+
+Frontend runtime:
+
+- `VITE_API_URL` (optional): API base URL for the frontend. In local development the app now defaults to `http://localhost:3001`.
+- `VITE_API_KEY` (optional): forwarded as `x-api-key` to backend requests when backend auth is enabled.
 
 ## 🧠 Features
 - **Two-Stage AI Pipeline**: Image captioning + LLM diagnosis with structured output.
@@ -49,13 +58,16 @@ Create environment variables for backend runtime:
 - **Resilient Inference Calls**: Timeout + retry logic for external model requests.
 - **Strict AI Responses**: Returns explicit errors when inference output is invalid instead of mock fallback content.
 - **Rate-Limited Endpoints**: Protects `/analyze` and `/save-case` from abuse.
-- **Persistent Case Storage**: Saves cases as append-only NDJSON on the backend.
+- **Saved Case History**: Save diagnoses and reopen them later through `/cases` and `/cases/:id`.
+- **Durable Case Storage**: Uses Upstash/Vercel-compatible REST storage in production when configured, with NDJSON fallback for local development.
+- **Persistent Case Storage**: Saves cases as append-only NDJSON on the backend when remote storage is not configured.
 
 ## 🗂️ Project Structure
 - `/api`: Vercel serverless entrypoint.
 - `/backend`: Express server and API routes.
 - `/models`: AI inference + validation pipeline.
 - `/src`: React frontend screens and components.
+- `/test`: backend integration tests using Node's built-in test runner.
 - `/tmp`: local case storage output (`cases.ndjson`).
 
 ## 🚀 Deployment (Vercel)

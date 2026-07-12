@@ -1,0 +1,12 @@
+node_modules
+dist
+tmp
+.git
+.gitignore
+*.log
+Dockerfile
+GCP_DEPLOYMENT.md
+README.md
+bun.lock
+bun.lockb
+package-lock.json

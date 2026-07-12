@@ -82,19 +82,33 @@ const HomeScreen = () => {
         AI gives suggestions. You make the final call.
       </motion.p>
 
-      {/* CTA */}
-      <motion.button
+      {/* CTAs */}
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.3 }}
-        whileTap={{ scale: 0.97 }}
-        onClick={() => navigate("/camera")}
-        className="w-full h-16 rounded-xl bg-primary text-primary-foreground font-display font-semibold text-lg flex items-center justify-center gap-3 shadow-lg active:shadow-md transition-shadow"
+        className="flex flex-col gap-3 w-full"
       >
-        <Camera className="w-6 h-6" />
-        Scan Problem
-        <ChevronRight className="w-5 h-5 opacity-60" />
-      </motion.button>
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={() => navigate("/camera")}
+          className="w-full h-16 rounded-xl bg-primary text-primary-foreground font-display font-semibold text-lg flex items-center justify-center gap-3 shadow-lg active:shadow-md transition-shadow"
+        >
+          <Camera className="w-6 h-6" />
+          Scan Problem
+          <ChevronRight className="w-5 h-5 opacity-60" />
+        </motion.button>
+
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={() => navigate("/vr", { state: { part: "Spark Plug", solutions: ["Unscrew the old spark plug carefully using a spark plug socket", "Inspect cylinder thread for debris and clean the gap", "Install new spark plug and torque to 15-20 lb-ft"], tools: ["Spark Plug Socket", "Torque Wrench", "Feeler Gauge"], risk: "Low" } })}
+          className="w-full h-14 rounded-xl border border-border bg-card text-foreground font-display font-semibold text-base flex items-center justify-center gap-3 shadow-sm hover:bg-muted transition-colors"
+        >
+          <Cpu className="w-5 h-5 text-sky-400" />
+          Interactive VR Training
+          <ChevronRight className="w-4 h-4 opacity-60" />
+        </motion.button>
+      </motion.div>
     </div>
   );
 };

@@ -13,7 +13,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const CASE_STORAGE_FILE = process.env.CASE_STORAGE_FILE || path.resolve(__dirname, '../tmp/cases.ndjson');
+const CASE_STORAGE_FILE = process.env.CASE_STORAGE_FILE || (process.env.VERCEL ? '/tmp/cases.ndjson' : path.resolve(__dirname, '../tmp/cases.ndjson'));
 
 const SaveCaseSchema = z.object({
   diagnosis: z.object({

@@ -258,15 +258,26 @@ const ResultScreen = () => {
               </p>
             </div>
 
-            {/* CTA */}
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              onClick={() => navigate("/")}
-              className="w-full h-14 rounded-xl bg-primary text-primary-foreground font-display font-semibold text-base flex items-center justify-center gap-2 shadow-lg"
-            >
-              <Camera className="w-5 h-5" />
-              Scan Another Problem
-            </motion.button>
+            {/* CTAs */}
+            <div className="flex flex-col gap-3">
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={() => navigate("/vr", { state: { part: diagnosis.part, solutions: diagnosis.solutions, tools: diagnosis.tools, risk: diagnosis.risk } })}
+                className="w-full h-14 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-display font-semibold text-base flex items-center justify-center gap-2 shadow-lg"
+              >
+                <Cpu className="w-5 h-5 animate-pulse" />
+                Start VR Repair Assist
+              </motion.button>
+
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={() => navigate("/")}
+                className="w-full h-14 rounded-xl bg-primary text-primary-foreground font-display font-semibold text-base flex items-center justify-center gap-2 shadow-sm"
+              >
+                <Camera className="w-5 h-5" />
+                Scan Another Problem
+              </motion.button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

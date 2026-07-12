@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import HomeScreen from "./screens/HomeScreen";
 import CameraScreen from "./screens/CameraScreen";
 import ResultScreen from "./screens/ResultScreen";
+import VRScreen from "./screens/VRScreen";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -20,6 +21,7 @@ const App = () => (
           <Route path="/" element={<HomeScreen />} />
           <Route path="/camera" element={<CameraScreen />} />
           <Route path="/result" element={<ResultScreen />} />
+          <Route path="/vr" element={<VRScreen />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
